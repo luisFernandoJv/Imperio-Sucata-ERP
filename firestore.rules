@@ -1,0 +1,196 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ========================================================================
+    // FUNÇÕES AUXILIARES
+    // ========================================================================
+    
+    // Verifica se usuário está autenticado
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Verifica se usuário é admin
+    function isAdmin() {
+      return isAuthenticated() && 
+             request.auth.token.admin == true;
+    }
+    
+    // Verifica se é o próprio usuário
+    function isOwner(userId) {
+      return isAuthenticated() && 
+             request.auth.uid == userId;
+    }
+    
+    // Valida dados de transação na criação/atualização
+    function isValidTransaction(data) {
+      return data.keys().hasAll(['material', 'tipo', 'quantidade', 'valorTotal', 'data', 'userId']) &&
+             data.material is string &&
+             data.material.size() > 0 &&
+             data.tipo in ['compra', 'venda', 'despesa'] &&
+             data.quantidade is number &&
+             data.quantidade > 0 &&
+             data.valorTotal is number &&
+             data.valorTotal >= 0 &&
+             data.data is timestamp &&
+             data.userId is string &&
+             // Validação de forma de pagamento (se presente)
+             (!data.keys().hasAny(['formaPagamento']) || 
+              data.formaPagamento in ['dinheiro', 'pix', 'cartao', 'boleto', 'transferencia']) &&
+             // Validação de precoUnitario (se presente)
+             (!data.keys().hasAny(['precoUnitario']) || 
+              (data.precoUnitario is number && data.precoUnitario >= 0));
+    }
+    
+    // ========================================================================
+    // REGRAS DE ACESSO - TRANSAÇÕES
+    // ========================================================================
+    
+    match /transactions/{transactionId} {
+      // Leitura: apenas usuários autenticados
+      allow read: if isAuthenticated();
+      
+      // Criação: usuários autenticados com dados válidos e userId correto
+      allow create: if isAuthenticated() && 
+                       isValidTransaction(request.resource.data) &&
+                       request.resource.data.userId == request.auth.uid;
+      
+      // Atualização: apenas o criador ou admin, com dados válidos
+      allow update: if isAuthenticated() && 
+                       (resource.data.userId == request.auth.uid || isAdmin()) &&
+                       isValidTransaction(request.resource.data) &&
+                       // Não permitir mudança de userId
+                       request.resource.data.userId == resource.data.userId;
+      
+      // Deleção: apenas o criador ou admin
+      allow delete: if isAuthenticated() && 
+                       (resource.data.userId == request.auth.uid || isAdmin());
+    }
+    
+    // ========================================================================
+    // REGRAS DE ACESSO - INVENTÁRIO
+    // ========================================================================
+    
+    match /inventory/{document=**} {
+      // Leitura: apenas usuários autenticados
+      allow read: if isAuthenticated();
+      
+      // Escrita: BLOQUEADA - apenas via Cloud Functions
+      // Isso garante que o inventário só seja atualizado via triggers
+      allow write: if false;
+    }
+    
+    // ========================================================================
+    // REGRAS DE ACESSO - RELATÓRIOS
+    // ========================================================================
+    
+    // Relatórios em tempo real (live_summary)
+    match /reports/{document=**} {
+      // Leitura: apenas usuários autenticados
+      allow read: if isAuthenticated();
+      
+      // Escrita: BLOQUEADA - apenas via Cloud Functions
+      allow write: if false;
+    }
+    
+    // Relatórios diários agregados
+    match /daily_reports/{reportId} {
+      // Leitura: apenas usuários autenticados
+      allow read: if isAuthenticated();
+      
+      // Escrita: BLOQUEADA - apenas via Cloud Functions
+      // Os relatórios são gerados automaticamente pelo scheduler
+      allow write: if false;
+    }
+    
+    // Relatórios mensais
+    match /monthly_reports/{reportId} {
+      // Leitura: apenas usuários autenticados
+      allow read: if isAuthenticated();
+      
+      // Escrita: apenas admin (para correções manuais se necessário)
+      allow write: if isAdmin();
+    }
+    
+    // Relatórios anuais
+    match /yearly_reports/{reportId} {
+      // Leitura: apenas usuários autenticados
+      allow read: if isAuthenticated();
+      
+      // Escrita: apenas admin
+      allow write: if isAdmin();
+    }
+    
+    // ========================================================================
+    // REGRAS DE ACESSO - CONFIGURAÇÕES DO USUÁRIO
+    // ========================================================================
+    
+    match /user_settings/{userId} {
+      // Leitura: apenas o próprio usuário ou admin
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Criação: apenas o próprio usuário
+      allow create: if isOwner(userId);
+      
+      // Atualização: apenas o próprio usuário ou admin
+      allow update: if isOwner(userId) || isAdmin();
+      
+      // Deleção: apenas admin
+      allow delete: if isAdmin();
+    }
+    
+    // ========================================================================
+    // REGRAS DE ACESSO - PERFIS DE USUÁRIOS
+    // ========================================================================
+    
+    match /users/{userId} {
+      // Leitura: apenas o próprio usuário ou admin
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Criação: apenas o próprio usuário
+      allow create: if isOwner(userId);
+      
+      // Atualização: apenas o próprio usuário ou admin
+      allow update: if isOwner(userId) || isAdmin();
+      
+      // Deleção: apenas admin
+      allow delete: if isAdmin();
+    }
+    
+    // ========================================================================
+    // REGRAS DE ACESSO - CONFIGURAÇÕES GLOBAIS
+    // ========================================================================
+    
+    match /config/{document=**} {
+      // Leitura: usuários autenticados
+      allow read: if isAuthenticated();
+      
+      // Escrita: apenas admin
+      allow write: if isAdmin();
+    }
+    
+    // ========================================================================
+    // REGRAS DE ACESSO - LOGS DE AUDITORIA (OPCIONAL)
+    // ========================================================================
+    
+    match /audit_logs/{logId} {
+      // Leitura: apenas admin
+      allow read: if isAdmin();
+      
+      // Escrita: BLOQUEADA - apenas via Cloud Functions
+      allow write: if false;
+    }
+    
+    // ========================================================================
+    // BLOQUEIO PADRÃO
+    // ========================================================================
+    
+    // Bloquear acesso a qualquer outra coleção não especificada
+    // Isso é uma boa prática de segurança
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
