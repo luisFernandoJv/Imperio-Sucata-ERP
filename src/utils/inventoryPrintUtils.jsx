@@ -1,269 +1,249 @@
 export const printInventory = (inventory, materials) => {
-  const printWindow = window.open("", "_blank")
+  const printWindow = window.open("", "_blank");
 
-  const now = new Date()
-  const dateStr = now.toLocaleDateString("pt-BR")
-  const timeStr = now.toLocaleTimeString("pt-BR")
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("pt-BR");
+  const timeStr = now.toLocaleTimeString("pt-BR");
 
-  let totalValue = 0
-  let totalQuantity = 0
-  let lowStockCount = 0
+  let totalValue = 0;
+  let totalQuantity = 0;
+  let lowStockCount = 0;
 
   const inventoryRows = materials
     .map((material) => {
-      const item = inventory[material.key] || { quantidade: 0, precoCompra: 0, precoVenda: 0 }
-      const value = item.quantidade * item.precoCompra
-      const isLowStock = item.quantidade <= material.minStock
+      const item = inventory[material.key] || {
+        quantidade: 0,
+        precoCompra: 0,
+        precoVenda: 0,
+      };
+      const value = item.quantidade * item.precoCompra;
+      const isLowStock = item.quantidade <= material.minStock;
 
-      totalValue += value
-      totalQuantity += item.quantidade
-      if (isLowStock) lowStockCount++
+      totalValue += value;
+      totalQuantity += item.quantidade;
+      if (isLowStock) lowStockCount++;
 
       return {
         ...material,
         ...item,
         value,
         isLowStock,
-      }
+      };
     })
-    .sort((a, b) => b.value - a.value)
+    .sort((a, b) => b.value - a.value);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
-    }).format(value || 0)
-  }
+    }).format(value || 0);
+  };
 
   printWindow.document.write(`
     <!DOCTYPE html>
-    <html>
+    <html lang="pt-BR">
       <head>
+        <meta charset="UTF-8">
         <title>Relatório de Estoque - Império Sucata</title>
         <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
+          @page { size: A4; margin: 15mm; }
+          * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; }
           body { 
-            font-family: 'Arial', sans-serif; 
-            font-size: 11px; 
-            line-height: 1.4; 
-            color: #000; 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            font-size: 10pt; 
+            line-height: 1.5; 
+            color: #2c3e50; 
             background: white;
-            padding: 20px;
+            padding: 0;
           }
           .header { 
-            text-align: center; 
-            margin-bottom: 30px; 
-            border-bottom: 3px solid #2563eb; 
-            padding-bottom: 20px; 
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 20pt; 
+            border-bottom: 2pt solid #2c3e50; 
+            padding-bottom: 10pt; 
           }
-          .header h1 { 
-            color: #2563eb; 
-            font-size: 24px; 
-            margin-bottom: 5px; 
+          .header-info h1 { 
+            color: #2c3e50; 
+            font-size: 22pt; 
+            margin: 0;
+            letter-spacing: -1px;
           }
-          .header h2 { 
-            color: #1e40af; 
-            font-size: 18px; 
-            margin-bottom: 10px; 
-          }
-          .header p { 
-            color: #666; 
-            font-size: 11px; 
+          .header-meta {
+            text-align: right;
+            font-size: 8pt;
+            color: #7f8c8d;
           }
           .summary { 
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin: 20px 0; 
-            padding: 20px; 
-            background-color: #f8fafc; 
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            gap: 10pt;
+            margin-bottom: 20pt;
           }
           .summary-item {
+            flex: 1;
+            padding: 10pt;
+            background: #f8f9fa;
+            border: 1pt solid #e9ecef;
+            border-radius: 4pt;
             text-align: center;
-            padding: 10px;
-            background: white;
-            border-radius: 6px;
-            border: 1px solid #e2e8f0;
           }
           .summary-label {
-            font-size: 10px;
-            color: #64748b;
-            margin-bottom: 5px;
-            font-weight: 600;
+            font-size: 7pt;
+            color: #7f8c8d;
             text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 4pt;
           }
           .summary-value {
-            font-size: 18px;
+            font-size: 14pt;
             font-weight: bold;
-            color: #2563eb;
+            color: #2c3e50;
           }
           .table { 
             width: 100%; 
             border-collapse: collapse; 
-            margin: 20px 0; 
-          }
-          .table th, .table td { 
-            border: 1px solid #cbd5e1; 
-            padding: 8px; 
-            text-align: left; 
-            font-size: 10px; 
+            margin-bottom: 20pt; 
           }
           .table th { 
-            background-color: #2563eb; 
+            background-color: #2c3e50; 
             color: white;
             font-weight: bold; 
             text-transform: uppercase;
+            font-size: 8pt;
+            padding: 8pt 5pt;
+            text-align: left;
           }
-          .table tr:nth-child(even) { 
-            background-color: #f8fafc; 
+          .table td { 
+            border-bottom: 0.5pt solid #dee2e6; 
+            padding: 6pt 5pt; 
+            font-size: 9pt; 
           }
-          .table tr:hover {
-            background-color: #e0f2fe;
-          }
-          .low-stock {
-            background-color: #fef2f2 !important;
-          }
-          .low-stock-badge {
-            display: inline-block;
-            background-color: #dc2626;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 8px;
-            font-weight: bold;
-          }
+          .table tr:nth-child(even) { background-color: #fcfcfc; }
+          .low-stock { background-color: #fff5f5 !important; }
+          .low-stock td { color: #c0392b; }
           .text-right { text-align: right; }
           .text-center { text-align: center; }
+          .bold { font-weight: bold; }
           .footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 2px solid #e2e8f0;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
             text-align: center;
-            color: #64748b;
-            font-size: 9px;
-          }
-          .category-header {
-            background-color: #1e40af !important;
-            color: white;
-            font-weight: bold;
-            text-align: center;
-            padding: 10px;
-            font-size: 11px;
+            font-size: 7pt;
+            color: #bdc3c7;
+            border-top: 0.5pt solid #eee;
+            padding-top: 5pt;
           }
           @media print {
-            body { padding: 10px; }
-            .summary { page-break-inside: avoid; }
-            .table { page-break-inside: auto; }
-            .table tr { page-break-inside: avoid; page-break-after: auto; }
+            .no-print { display: none; }
+            body { padding: 0; }
           }
         </style>
       </head>
       <body>
         <div class="header">
-          <h1>IMPÉRIO SUCATA</h1>
-          <h2>Relatório Completo de Estoque</h2>
-          <p>Gerado em: ${dateStr} às ${timeStr}</p>
+          <div class="header-info">
+            <h1>IMPÉRIO SUCATA</h1>
+            <p style="font-size: 11pt; color: #7f8c8d;">Relatório de Inventário e Estoque</p>
+          </div>
+          <div class="header-meta">
+            <p>Emissão: ${dateStr} às ${timeStr}</p>
+            <p>Sistema de Gestão de Resíduos</p>
+          </div>
         </div>
 
         <div class="summary">
           <div class="summary-item">
-            <div class="summary-label">Valor Total</div>
+            <div class="summary-label">Valor em Estoque</div>
             <div class="summary-value">${formatCurrency(totalValue)}</div>
           </div>
           <div class="summary-item">
-            <div class="summary-label">Quantidade Total</div>
+            <div class="summary-label">Peso Total</div>
             <div class="summary-value">${totalQuantity.toFixed(1)} kg</div>
           </div>
           <div class="summary-item">
-            <div class="summary-label">Materiais</div>
+            <div class="summary-label">Itens Cadastrados</div>
             <div class="summary-value">${materials.length}</div>
           </div>
           <div class="summary-item">
-            <div class="summary-label">Estoque Baixo</div>
-            <div class="summary-value" style="color: ${lowStockCount > 0 ? "#dc2626" : "#16a34a"}">${lowStockCount}</div>
+            <div class="summary-label">Alertas de Estoque</div>
+            <div class="summary-value" style="color: ${lowStockCount > 0 ? "#c0392b" : "#27ae60"}">${lowStockCount}</div>
           </div>
         </div>
 
         <table class="table">
           <thead>
             <tr>
-              <th style="width: 5%">#</th>
-              <th style="width: 20%">Material</th>
-              <th style="width: 10%" class="text-center">Categoria</th>
-              <th style="width: 12%" class="text-right">Quantidade</th>
-              <th style="width: 12%" class="text-right">Preço Compra</th>
-              <th style="width: 12%" class="text-right">Preço Venda</th>
-              <th style="width: 12%" class="text-right">Valor Total</th>
-              <th style="width: 10%" class="text-right">Margem</th>
-              <th style="width: 7%" class="text-center">Status</th>
+              <th style="width: 35%">Material</th>
+              <th style="width: 15%" class="text-right">Quantidade</th>
+              <th style="width: 15%" class="text-right">Preço Compra</th>
+              <th style="width: 15%" class="text-right">Preço Venda</th>
+              <th style="width: 20%" class="text-right">Total (Custo)</th>
             </tr>
           </thead>
           <tbody>
             ${inventoryRows
-              .map((item, index) => {
-                const margin =
-                  item.precoCompra > 0 ? ((item.precoVenda - item.precoCompra) / item.precoCompra) * 100 : 0
-
-                return `
-                  <tr class="${item.isLowStock ? "low-stock" : ""}">
-                    <td class="text-center">${index + 1}</td>
-                    <td><strong>${item.name}</strong></td>
-                    <td class="text-center">${item.category}</td>
-                    <td class="text-right">${item.quantidade.toFixed(2)} kg</td>
-                    <td class="text-right">${formatCurrency(item.precoCompra)}</td>
-                    <td class="text-right">${formatCurrency(item.precoVenda)}</td>
-                    <td class="text-right"><strong>${formatCurrency(item.value)}</strong></td>
-                    <td class="text-right" style="color: ${margin >= 0 ? "#16a34a" : "#dc2626"}">${margin.toFixed(1)}%</td>
-                    <td class="text-center">
-                      ${item.isLowStock ? '<span class="low-stock-badge">BAIXO</span>' : '<span style="color: #16a34a">✓</span>'}
-                    </td>
-                  </tr>
-                `
-              })
+              .map(
+                (item) => `
+                <tr class="${item.isLowStock ? "low-stock" : ""}">
+                  <td>
+                    <span class="bold">${item.name}</span><br>
+                    <span style="font-size: 7pt; color: #95a5a6;">${item.category}</span>
+                  </td>
+                  <td class="text-right">${item.quantidade.toFixed(2)} kg ${item.isLowStock ? ' <span style="font-size: 7pt;">[!]</span>' : ""}</td>
+                  <td class="text-right">${formatCurrency(item.precoCompra)}</td>
+                  <td class="text-right">${formatCurrency(item.precoVenda)}</td>
+                  <td class="text-right bold">${formatCurrency(item.value)}</td>
+                </tr>
+              `,
+              )
               .join("")}
           </tbody>
           <tfoot>
-            <tr style="background-color: #f1f5f9; font-weight: bold;">
-              <td colspan="3" class="text-right">TOTAIS:</td>
-              <td class="text-right">${totalQuantity.toFixed(2)} kg</td>
+            <tr style="background-color: #f8f9fa;">
+              <td class="bold">TOTAIS CONSOLIDADOS</td>
+              <td class="text-right bold">${totalQuantity.toFixed(2)} kg</td>
               <td colspan="2"></td>
-              <td class="text-right">${formatCurrency(totalValue)}</td>
-              <td colspan="2"></td>
+              <td class="text-right bold" style="font-size: 11pt;">${formatCurrency(totalValue)}</td>
             </tr>
           </tfoot>
         </table>
 
         <div class="footer">
-          <p><strong>Império Sucata</strong> - Sistema de Gestão de Estoque</p>
-          <p>Este relatório contém informações confidenciais e deve ser mantido em local seguro</p>
+          Império Sucata - Documento Gerencial de Uso Interno - Gerado automaticamente pelo sistema
         </div>
       </body>
     </html>
-  `)
+  `);
 
-  printWindow.document.close()
-  printWindow.print()
-}
+  printWindow.document.close();
+  // Aguarda um pouco para carregar estilos antes de imprimir
+  setTimeout(() => {
+    printWindow.print();
+  }, 500);
+};
 
 export const exportInventoryToCSV = (inventory, materials) => {
   const headers = [
     "Material",
     "Categoria",
     "Quantidade (kg)",
-    "Preço Compra (R$/kg)",
-    "Preço Venda (R$/kg)",
+    "Preco Compra (R$/kg)",
+    "Preco Venda (R$/kg)",
     "Valor Total (R$)",
-    "Margem (%)",
     "Status",
-  ]
+  ];
 
   const rows = materials.map((material) => {
-    const item = inventory[material.key] || { quantidade: 0, precoCompra: 0, precoVenda: 0 }
-    const value = item.quantidade * item.precoCompra
-    const margin = item.precoCompra > 0 ? ((item.precoVenda - item.precoCompra) / item.precoCompra) * 100 : 0
-    const isLowStock = item.quantidade <= material.minStock
+    const item = inventory[material.key] || {
+      quantidade: 0,
+      precoCompra: 0,
+      precoVenda: 0,
+    };
+    const value = item.quantidade * item.precoCompra;
+    const isLowStock = item.quantidade <= material.minStock;
 
     return [
       material.name,
@@ -272,22 +252,27 @@ export const exportInventoryToCSV = (inventory, materials) => {
       item.precoCompra.toFixed(2),
       item.precoVenda.toFixed(2),
       value.toFixed(2),
-      margin.toFixed(1),
       isLowStock ? "BAIXO" : "OK",
-    ]
-  })
+    ];
+  });
 
-  const csvContent = [headers.join(","), ...rows.map((row) => row.map((field) => `"${field}"`).join(","))].join("\n")
+  const csvContent = [
+    headers.join(","),
+    ...rows.map((row) => row.map((field) => `"${field}"`).join(",")),
+  ].join("\n");
 
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-  const link = document.createElement("a")
-  const url = URL.createObjectURL(blob)
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
 
-  link.setAttribute("href", url)
-  link.setAttribute("download", `estoque_${new Date().toISOString().split("T")[0]}.csv`)
-  link.style.visibility = "hidden"
+  link.setAttribute("href", url);
+  link.setAttribute(
+    "download",
+    `estoque_${new Date().toISOString().split("T")[0]}.csv`,
+  );
+  link.style.visibility = "hidden";
 
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-}
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};

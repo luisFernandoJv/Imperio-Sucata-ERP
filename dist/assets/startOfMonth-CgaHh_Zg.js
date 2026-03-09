@@ -1,0 +1,1 @@
+import{t}from"./toDate-RPFFPxdc.js";function e(e){const s=t(e),o=s.getMonth();return s.setFullYear(s.getFullYear(),o+1,0),s.setHours(23,59,59,999),s}function s(e){const s=t(e);return s.setDate(1),s.setHours(0,0,0,0),s}export{e,s};

@@ -1,9 +1,18 @@
-"use client"
+"use client";
 
-import { useMemo } from "react"
-import { Card } from "@/components/ui/card"
-import { TrendingUp, TrendingDown, DollarSign, FileText, BarChart3, Calculator, Percent, Target } from "lucide-react"
-import { formatCurrency } from "@/lib/utils"
+import { useMemo } from "react";
+import { Card } from "@/components/ui/card";
+import {
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  FileText,
+  BarChart3,
+  Calculator,
+  Percent,
+  Target,
+} from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 import {
   LineChart,
   Line,
@@ -18,11 +27,19 @@ import {
   Legend,
   ResponsiveContainer,
   Cell,
-} from "recharts"
-import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
+} from "recharts";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-const StatCard = ({ icon: Icon, title, value, subtitle, color, bgColor, trend }) => (
+const StatCard = ({
+  icon: Icon,
+  title,
+  value,
+  subtitle,
+  color,
+  bgColor,
+  trend,
+}) => (
   <div
     className={`relative p-6 ${bgColor} rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100`}
   >
@@ -41,7 +58,7 @@ const StatCard = ({ icon: Icon, title, value, subtitle, color, bgColor, trend })
     <p className={`text-2xl font-bold ${color} mb-1`}>{value}</p>
     {subtitle && <p className="text-xs text-gray-500">{subtitle}</p>}
   </div>
-)
+);
 
 const AdvancedMetrics = ({ stats }) => (
   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
@@ -50,9 +67,15 @@ const AdvancedMetrics = ({ stats }) => (
         <Percent className="h-5 w-5 text-blue-600 mr-2" />
         <span className="font-semibold text-blue-800">Margem de Lucro</span>
       </div>
-      <p className="text-2xl font-bold text-blue-600">{stats.margemLucro.toFixed(1)}%</p>
+      <p className="text-2xl font-bold text-blue-600">
+        {stats.margemLucro.toFixed(1)}%
+      </p>
       <p className="text-xs text-blue-600 mt-1">
-        {stats.margemLucro >= 30 ? "Excelente margem" : stats.margemLucro >= 15 ? "Boa margem" : "Margem baixa"}
+        {stats.margemLucro >= 30
+          ? "Excelente margem"
+          : stats.margemLucro >= 15
+            ? "Boa margem"
+            : "Margem baixa"}
       </p>
     </div>
 
@@ -61,7 +84,9 @@ const AdvancedMetrics = ({ stats }) => (
         <Calculator className="h-5 w-5 text-purple-600 mr-2" />
         <span className="font-semibold text-purple-800">Ticket Médio</span>
       </div>
-      <p className="text-2xl font-bold text-purple-600">{formatCurrency(stats.ticketMedio)}</p>
+      <p className="text-2xl font-bold text-purple-600">
+        {formatCurrency(stats.ticketMedio)}
+      </p>
       <p className="text-xs text-purple-600 mt-1">Por transação</p>
     </div>
 
@@ -70,119 +95,133 @@ const AdvancedMetrics = ({ stats }) => (
         <Target className="h-5 w-5 text-orange-600 mr-2" />
         <span className="font-semibold text-orange-800">ROI</span>
       </div>
-      <p className="text-2xl font-bold text-orange-600">{stats.roi.toFixed(1)}%</p>
+      <p className="text-2xl font-bold text-orange-600">
+        {stats.roi.toFixed(1)}%
+      </p>
       <p className="text-xs text-orange-600 mt-1">Retorno sobre investimento</p>
     </div>
   </div>
-)
+);
 
 const InteractiveCharts = ({ transactions, stats }) => {
   // Preparar dados para gráfico de linha (Receita vs Custo vs Lucro ao longo do tempo)
   const timelineData = useMemo(() => {
-    const dataByDate = {}
+    const dataByDate = {};
 
     transactions.forEach((t) => {
-      const date = format(new Date(t.data), "dd/MM", { locale: ptBR })
+      const date = format(new Date(t.data), "dd/MM", { locale: ptBR });
 
       if (!dataByDate[date]) {
-        dataByDate[date] = { date, receita: 0, custo: 0, lucro: 0 }
+        dataByDate[date] = { date, receita: 0, custo: 0, lucro: 0 };
       }
 
       if (t.tipo === "venda") {
-        dataByDate[date].receita += t.valorTotal || 0
+        dataByDate[date].receita += t.valorTotal || 0;
       } else if (t.tipo === "compra") {
-        dataByDate[date].custo += t.valorTotal || 0
+        dataByDate[date].custo += t.valorTotal || 0;
       } else if (t.tipo === "despesa") {
-        dataByDate[date].custo += t.valorTotal || 0
+        dataByDate[date].custo += t.valorTotal || 0;
       }
-    })
+    });
 
     // Calcular lucro
     Object.values(dataByDate).forEach((day) => {
-      day.lucro = day.receita - day.custo
-    })
+      day.lucro = day.receita - day.custo;
+    });
 
     return Object.values(dataByDate).sort((a, b) => {
-      const [dayA, monthA] = a.date.split("/")
-      const [dayB, monthB] = b.date.split("/")
-      return Number(monthA) - Number(monthB) || Number(dayA) - Number(dayB)
-    })
-  }, [transactions])
+      const [dayA, monthA] = a.date.split("/");
+      const [dayB, monthB] = b.date.split("/");
+      return Number(monthA) - Number(monthB) || Number(dayA) - Number(dayB);
+    });
+  }, [transactions]);
 
   // Dados para gráfico de pizza (Composição da Receita por Material)
   const revenueByMaterial = useMemo(() => {
-    const materialRevenue = {}
+    const materialRevenue = {};
 
     transactions
       .filter((t) => t.tipo === "venda")
       .forEach((t) => {
-        const material = t.material || "Outros"
-        materialRevenue[material] = (materialRevenue[material] || 0) + (t.valorTotal || 0)
-      })
+        const material = t.material || "Outros";
+        materialRevenue[material] =
+          (materialRevenue[material] || 0) + (t.valorTotal || 0);
+      });
 
     return Object.entries(materialRevenue)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value)
-      .slice(0, 5) // Top 5 materiais
-  }, [transactions])
+      .slice(0, 5); // Top 5 materiais
+  }, [transactions]);
 
   // Dados para gráfico de pizza (Análise de Pagamentos)
   const paymentAnalysis = useMemo(() => {
-    const paymentMethods = {}
+    const paymentMethods = {};
 
     transactions.forEach((t) => {
-      const method = (t.formaPagamento || "dinheiro").toUpperCase()
-      paymentMethods[method] = (paymentMethods[method] || 0) + (t.valorTotal || 0)
-    })
+      const method = (t.formaPagamento || "dinheiro").toUpperCase();
+      paymentMethods[method] =
+        (paymentMethods[method] || 0) + (t.valorTotal || 0);
+    });
 
-    return Object.entries(paymentMethods).map(([name, value]) => ({ name, value }))
-  }, [transactions])
+    return Object.entries(paymentMethods).map(([name, value]) => ({
+      name,
+      value,
+    }));
+  }, [transactions]);
 
   // Dados para gráfico de barras (Top 5 Materiais)
   const topMaterials = useMemo(() => {
-    const materialStats = {}
+    const materialStats = {};
 
     transactions.forEach((t) => {
-      const material = t.material || "Outros"
+      const material = t.material || "Outros";
       if (!materialStats[material]) {
-        materialStats[material] = { vendas: 0, compras: 0, lucro: 0 }
+        materialStats[material] = { vendas: 0, compras: 0, lucro: 0 };
       }
 
       if (t.tipo === "venda") {
-        materialStats[material].vendas += t.valorTotal || 0
+        materialStats[material].vendas += t.valorTotal || 0;
       } else if (t.tipo === "compra") {
-        materialStats[material].compras += t.valorTotal || 0
+        materialStats[material].compras += t.valorTotal || 0;
       }
-    })
+    });
 
     Object.values(materialStats).forEach((stat) => {
-      stat.lucro = stat.vendas - stat.compras
-    })
+      stat.lucro = stat.vendas - stat.compras;
+    });
 
     return Object.entries(materialStats)
       .map(([name, stats]) => ({ name, ...stats }))
       .sort((a, b) => b.lucro - a.lucro)
-      .slice(0, 5)
-  }, [transactions])
+      .slice(0, 5);
+  }, [transactions]);
 
   // Dados para gráfico de barras (Top 5 Clientes)
   const topClients = useMemo(() => {
-    const clientStats = {}
+    const clientStats = {};
 
     transactions
       .filter((t) => t.tipo === "venda")
       .forEach((t) => {
-        const client = t.cliente || t.vendedor || "Cliente Desconhecido"
-        clientStats[client] = (clientStats[client] || 0) + (t.valorTotal || 0)
-      })
+        const client = t.cliente || t.vendedor || "Cliente Desconhecido";
+        clientStats[client] = (clientStats[client] || 0) + (t.valorTotal || 0);
+      });
 
     return Object.entries(clientStats)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value)
-      .slice(0, 5)
-  }, [transactions])
+      .slice(0, 5);
+  }, [transactions]);
 
-  const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"]
+  const COLORS = [
+    "#10b981",
+    "#3b82f6",
+    "#f59e0b",
+    "#ef4444",
+    "#8b5cf6",
+    "#ec4899",
+  ];
 
   return (
     <div className="space-y-6 mt-6">
@@ -199,12 +238,33 @@ const InteractiveCharts = ({ transactions, stats }) => {
             <YAxis />
             <Tooltip
               formatter={(value) => `R$ ${value.toFixed(2)}`}
-              contentStyle={{ backgroundColor: "#fff", border: "1px solid #e2e8f0" }}
+              contentStyle={{
+                backgroundColor: "#fff",
+                border: "1px solid #e2e8f0",
+              }}
             />
             <Legend />
-            <Line type="monotone" dataKey="receita" stroke="#10b981" strokeWidth={2} name="Receita" />
-            <Line type="monotone" dataKey="custo" stroke="#ef4444" strokeWidth={2} name="Custo" />
-            <Line type="monotone" dataKey="lucro" stroke="#3b82f6" strokeWidth={2} name="Lucro" />
+            <Line
+              type="monotone"
+              dataKey="receita"
+              stroke="#10b981"
+              strokeWidth={2}
+              name="Receita"
+            />
+            <Line
+              type="monotone"
+              dataKey="custo"
+              stroke="#ef4444"
+              strokeWidth={2}
+              name="Custo"
+            />
+            <Line
+              type="monotone"
+              dataKey="lucro"
+              stroke="#3b82f6"
+              strokeWidth={2}
+              name="Lucro"
+            />
           </LineChart>
         </ResponsiveContainer>
       </Card>
@@ -223,13 +283,18 @@ const InteractiveCharts = ({ transactions, stats }) => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) =>
+                  `${name}: ${(percent * 100).toFixed(0)}%`
+                }
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
               >
                 {revenueByMaterial.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
                 ))}
               </Pie>
               <Tooltip formatter={(value) => `R$ ${value.toFixed(2)}`} />
@@ -250,13 +315,18 @@ const InteractiveCharts = ({ transactions, stats }) => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) =>
+                  `${name}: ${(percent * 100).toFixed(0)}%`
+                }
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
               >
                 {paymentAnalysis.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
                 ))}
               </Pie>
               <Tooltip formatter={(value) => `R$ ${value.toFixed(2)}`} />
@@ -279,7 +349,10 @@ const InteractiveCharts = ({ transactions, stats }) => {
               <YAxis />
               <Tooltip
                 formatter={(value) => `R$ ${value.toFixed(2)}`}
-                contentStyle={{ backgroundColor: "#fff", border: "1px solid #e2e8f0" }}
+                contentStyle={{
+                  backgroundColor: "#fff",
+                  border: "1px solid #e2e8f0",
+                }}
               />
               <Legend />
               <Bar dataKey="vendas" fill="#10b981" name="Vendas" />
@@ -302,7 +375,10 @@ const InteractiveCharts = ({ transactions, stats }) => {
               <YAxis />
               <Tooltip
                 formatter={(value) => `R$ ${value.toFixed(2)}`}
-                contentStyle={{ backgroundColor: "#fff", border: "1px solid #e2e8f0" }}
+                contentStyle={{
+                  backgroundColor: "#fff",
+                  border: "1px solid #e2e8f0",
+                }}
               />
               <Bar dataKey="value" fill="#3b82f6" name="Receita Total" />
             </BarChart>
@@ -310,23 +386,26 @@ const InteractiveCharts = ({ transactions, stats }) => {
         </Card>
       </div>
     </div>
-  )
-}
+  );
+};
 
 const ReportSummary = ({ transactions }) => {
   const stats = useMemo(() => {
-    const vendas = transactions.filter((t) => t.tipo === "venda")
-    const compras = transactions.filter((t) => t.tipo === "compra")
-    const despesas = transactions.filter((t) => t.tipo === "despesa")
+    const vendas = transactions.filter((t) => t.tipo === "venda");
+    const compras = transactions.filter((t) => t.tipo === "compra");
+    const despesas = transactions.filter((t) => t.tipo === "despesa");
 
-    const totalVendas = vendas.reduce((sum, t) => sum + t.valorTotal, 0)
-    const totalCompras = compras.reduce((sum, t) => sum + t.valorTotal, 0)
-    const totalDespesas = despesas.reduce((sum, t) => sum + t.valorTotal, 0)
+    const totalVendas = vendas.reduce((sum, t) => sum + t.valorTotal, 0);
+    const totalCompras = compras.reduce((sum, t) => sum + t.valorTotal, 0);
+    const totalDespesas = despesas.reduce((sum, t) => sum + t.valorTotal, 0);
 
-    const lucroTotal = totalVendas - totalCompras - totalDespesas
-    const margemLucro = totalVendas > 0 ? (lucroTotal / totalVendas) * 100 : 0
-    const ticketMedio = transactions.length > 0 ? (totalVendas + totalCompras) / transactions.length : 0
-    const roi = totalCompras > 0 ? (lucroTotal / totalCompras) * 100 : 0
+    const lucroTotal = totalVendas - totalDespesas;
+    const margemLucro = totalVendas > 0 ? (lucroTotal / totalVendas) * 100 : 0;
+    const ticketMedio =
+      transactions.length > 0
+        ? (totalVendas + totalCompras) / transactions.length
+        : 0;
+    const roi = totalCompras > 0 ? (lucroTotal / totalCompras) * 100 : 0;
 
     return {
       totalVendas,
@@ -340,8 +419,8 @@ const ReportSummary = ({ transactions }) => {
       totalVendasCount: vendas.length,
       totalComprasCount: compras.length,
       totalDespesasCount: despesas.length,
-    }
-  }, [transactions])
+    };
+  }, [transactions]);
 
   return (
     <div className="space-y-6">
@@ -351,7 +430,9 @@ const ReportSummary = ({ transactions }) => {
             <BarChart3 className="h-7 w-7 mr-3 text-green-600" />
             Dashboard Executivo
           </h2>
-          <div className="text-sm text-gray-500">Período analisado: {transactions.length} transações</div>
+          <div className="text-sm text-gray-500">
+            Período analisado: {transactions.length} transações
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
@@ -383,7 +464,11 @@ const ReportSummary = ({ transactions }) => {
             icon={DollarSign}
             title="Lucro Líquido"
             value={formatCurrency(stats.lucroTotal)}
-            subtitle={stats.lucroTotal >= 0 ? "Resultado positivo" : "Resultado negativo"}
+            subtitle={
+              stats.lucroTotal >= 0
+                ? "Resultado positivo"
+                : "Resultado negativo"
+            }
             color={stats.lucroTotal >= 0 ? "text-green-600" : "text-red-600"}
             bgColor={stats.lucroTotal >= 0 ? "bg-green-50" : "bg-red-50"}
           />
@@ -399,7 +484,9 @@ const ReportSummary = ({ transactions }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-600">Status Financeiro:</span>
-              <span className={`font-semibold ${stats.lucroTotal >= 0 ? "text-green-600" : "text-red-600"}`}>
+              <span
+                className={`font-semibold ${stats.lucroTotal >= 0 ? "text-green-600" : "text-red-600"}`}
+              >
                 {stats.lucroTotal >= 0 ? "Lucrativo" : "Prejuízo"}
               </span>
             </div>
@@ -408,7 +495,11 @@ const ReportSummary = ({ transactions }) => {
               <span
                 className={`font-semibold ${stats.margemLucro >= 20 ? "text-green-600" : stats.margemLucro >= 10 ? "text-yellow-600" : "text-red-600"}`}
               >
-                {stats.margemLucro >= 20 ? "Alta" : stats.margemLucro >= 10 ? "Média" : "Baixa"}
+                {stats.margemLucro >= 20
+                  ? "Alta"
+                  : stats.margemLucro >= 10
+                    ? "Média"
+                    : "Baixa"}
               </span>
             </div>
             <div className="flex justify-between">
@@ -416,7 +507,11 @@ const ReportSummary = ({ transactions }) => {
               <span
                 className={`font-semibold ${stats.totalTransacoes >= 50 ? "text-green-600" : stats.totalTransacoes >= 20 ? "text-yellow-600" : "text-blue-600"}`}
               >
-                {stats.totalTransacoes >= 50 ? "Alto" : stats.totalTransacoes >= 20 ? "Médio" : "Baixo"}
+                {stats.totalTransacoes >= 50
+                  ? "Alto"
+                  : stats.totalTransacoes >= 20
+                    ? "Médio"
+                    : "Baixo"}
               </span>
             </div>
           </div>
@@ -425,7 +520,7 @@ const ReportSummary = ({ transactions }) => {
 
       <InteractiveCharts transactions={transactions} stats={stats} />
     </div>
-  )
-}
+  );
+};
 
-export default ReportSummary
+export default ReportSummary;

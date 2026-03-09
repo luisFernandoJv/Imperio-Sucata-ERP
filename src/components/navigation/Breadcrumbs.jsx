@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { memo } from "react"
-import { ChevronRight, Home } from "lucide-react"
-import { motion } from "framer-motion"
+import { memo } from "react";
+import { ChevronRight, Home } from "lucide-react";
+import { motion } from "framer-motion";
 
 export const Breadcrumbs = memo(({ items, onNavigate }) => {
   return (
@@ -27,7 +27,10 @@ export const Breadcrumbs = memo(({ items, onNavigate }) => {
         >
           <ChevronRight className="h-4 w-4 text-gray-400" />
           {item.action ? (
-            <button onClick={item.action} className="hover:text-blue-600 transition-colors">
+            <button
+              onClick={item.action}
+              className="hover:text-blue-600 transition-colors"
+            >
               {item.label}
             </button>
           ) : (
@@ -36,7 +39,7 @@ export const Breadcrumbs = memo(({ items, onNavigate }) => {
         </motion.div>
       ))}
     </nav>
-  )
-})
+  );
+});
 
-Breadcrumbs.displayName = "Breadcrumbs"
+Breadcrumbs.displayName = "Breadcrumbs";

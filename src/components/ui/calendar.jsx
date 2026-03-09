@@ -1,41 +1,19 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-
-const Button = ({ children, variant = "default", size = "default", className = "", onClick, ...props }) => {
-  const baseClasses =
-    "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none disabled:opacity-50"
-  const variants = {
-    ghost: "hover:bg-gray-100",
-  }
-  const sizes = {
-    sm: "h-8 w-8 p-0",
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`${baseClasses} ${variants[variant] || ""} ${sizes[size] || "px-4 py-2"} ${className}`}
-      {...props}
-    >
-      {children}
-    </button>
-  )
-}
+import { useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const Calendar = ({ selected, onSelect, className = "" }) => {
-  const [currentDate, setCurrentDate] = useState(selected || new Date())
+  const [currentDate, setCurrentDate] = useState(selected || new Date());
 
-  const today = new Date()
-  const year = currentDate.getFullYear()
-  const month = currentDate.getMonth()
+  const today = new Date();
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
 
-  const firstDayOfMonth = new Date(year, month, 1)
-  const lastDayOfMonth = new Date(year, month + 1, 0)
-  const firstDayWeekday = firstDayOfMonth.getDay()
-  const daysInMonth = lastDayOfMonth.getDate()
+  const firstDayOfMonth = new Date(year, month, 1);
+  const lastDayOfMonth = new Date(year, month + 1, 0);
+  const firstDayWeekday = firstDayOfMonth.getDay();
+  const daysInMonth = lastDayOfMonth.getDate();
 
   const monthNames = [
     "Janeiro",
@@ -50,46 +28,51 @@ const Calendar = ({ selected, onSelect, className = "" }) => {
     "Outubro",
     "Novembro",
     "Dezembro",
-  ]
+  ];
 
-  const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
+  const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
   const previousMonth = (e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setCurrentDate(new Date(year, month - 1, 1))
-  }
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentDate(new Date(year, month - 1, 1));
+  };
 
   const nextMonth = (e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setCurrentDate(new Date(year, month + 1, 1))
-  }
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentDate(new Date(year, month + 1, 1));
+  };
 
   const selectDate = (day, e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    const selectedDate = new Date(year, month, day)
-    onSelect(selectedDate)
-  }
+    e.preventDefault();
+    e.stopPropagation();
+    const selectedDate = new Date(year, month, day);
+    onSelect(selectedDate);
+  };
 
   const isSelected = (day) => {
-    if (!selected) return false
-    const date = new Date(year, month, day)
-    return date.toDateString() === selected.toDateString()
-  }
+    if (!selected) return false;
+    const date = new Date(year, month, day);
+    return date.toDateString() === selected.toDateString();
+  };
 
   const isToday = (day) => {
-    const date = new Date(year, month, day)
-    return date.toDateString() === today.toDateString()
-  }
+    const date = new Date(year, month, day);
+    return date.toDateString() === today.toDateString();
+  };
 
   const renderCalendarDays = () => {
-    const days = []
+    const days = [];
 
     // Dias vazios do mês anterior
     for (let i = 0; i < firstDayWeekday; i++) {
-      days.push(<div key={`empty-${i}`} className="p-2"></div>)
+      days.push(
+        <div
+          key={`empty-${i}`}
+          className="h-10 flex items-center justify-center"
+        ></div>,
+      );
     }
 
     // Dias do mês atual
@@ -100,47 +83,67 @@ const Calendar = ({ selected, onSelect, className = "" }) => {
           type="button"
           onClick={(e) => selectDate(day, e)}
           className={`
-            p-2 text-sm rounded-lg hover:bg-blue-100 transition-colors
-            ${isSelected(day) ? "bg-blue-600 text-white hover:bg-blue-700" : ""}
-            ${isToday(day) && !isSelected(day) ? "bg-blue-100 text-blue-600 font-semibold" : ""}
-            ${!isSelected(day) && !isToday(day) ? "text-gray-700 hover:text-blue-600" : ""}
+            h-10 rounded-lg font-semibold text-sm transition-all duration-200
+            ${
+              isSelected(day)
+                ? "bg-red-600 text-white shadow-md hover:bg-red-700"
+                : isToday(day)
+                  ? "bg-red-100 text-red-700 font-bold hover:bg-red-200"
+                  : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+            }
           `}
         >
           {day}
         </button>,
-      )
+      );
     }
 
-    return days
-  }
+    return days;
+  };
 
   return (
-    <div className={`p-4 ${className}`}>
-      <div className="flex items-center justify-between mb-4">
-        <Button variant="ghost" size="sm" onClick={previousMonth} className="p-2 hover:bg-gray-100">
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
+    <div
+      className={`w-full bg-white rounded-xl shadow-lg border border-slate-200 p-4 ${className}`}
+    >
+      {/* Header com navegação */}
+      <div className="flex items-center justify-between mb-6">
+        <button
+          type="button"
+          onClick={previousMonth}
+          className="p-2 hover:bg-slate-100 rounded-lg transition-colors duration-200"
+        >
+          <ChevronLeft className="h-5 w-5 text-slate-600" />
+        </button>
 
-        <h3 className="text-lg font-semibold text-gray-900">
+        <h3 className="text-lg font-black text-slate-900 min-w-max">
           {monthNames[month]} {year}
         </h3>
 
-        <Button variant="ghost" size="sm" onClick={nextMonth} className="p-2 hover:bg-gray-100">
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+        <button
+          type="button"
+          onClick={nextMonth}
+          className="p-2 hover:bg-slate-100 rounded-lg transition-colors duration-200"
+        >
+          <ChevronRight className="h-5 w-5 text-slate-600" />
+        </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 mb-2">
+      {/* Dias da semana */}
+      <div className="grid grid-cols-7 gap-2 mb-3">
         {weekDays.map((day) => (
-          <div key={day} className="p-2 text-xs font-medium text-gray-500 text-center">
+          <div
+            key={day}
+            className="h-10 flex items-center justify-center text-xs font-black text-slate-500 uppercase tracking-widest"
+          >
             {day}
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1">{renderCalendarDays()}</div>
+      {/* Dias do mês */}
+      <div className="grid grid-cols-7 gap-2">{renderCalendarDays()}</div>
     </div>
-  )
-}
+  );
+};
 
-export { Calendar }
+export { Calendar };

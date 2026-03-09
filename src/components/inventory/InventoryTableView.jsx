@@ -1,17 +1,17 @@
-"use client"
+"use client";
 
-import { memo } from "react"
-import { Edit, AlertTriangle } from "lucide-react"
-import { formatCurrency, formatWeight, formatPercent } from "../../lib/utils"
-import { Button } from "../ui/button"
-import { Badge } from "../ui/badge"
+import { memo } from "react";
+import { Edit, AlertTriangle } from "lucide-react";
+import { formatCurrency, formatWeight, formatPercent } from "../../lib/utils";
+import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
 
-const parseValue = (val) => Number(val) || 0
+const parseValue = (val) => Number(val) || 0;
 
 const calcMargin = (compra, venda) => {
-  if (!compra || compra === 0) return 0
-  return ((venda - compra) / compra) * 100
-}
+  if (!compra || compra === 0) return 0;
+  return ((venda - compra) / compra) * 100;
+};
 
 export const InventoryTableView = memo(({ materials, inventory, onEdit }) => {
   return (
@@ -31,23 +31,23 @@ export const InventoryTableView = memo(({ materials, inventory, onEdit }) => {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {materials.map((material) => {
-              const item = inventory[material.key] || {}
-              
+              const item = inventory[material.key] || {};
+
               // Sanitização consistente com os outros componentes
-              const qtd = parseValue(item.quantidade)
-              const compra = parseValue(item.precoCompra)
-              const venda = parseValue(item.precoVenda)
-              
-              const isNegative = qtd < 0
-              const isLowStock = !isNegative && qtd <= (material.minStock || 0)
-              
-              const totalValue = Math.max(0, qtd) * compra
-              const margin = calcMargin(compra, venda)
+              const qtd = parseValue(item.quantidade);
+              const compra = parseValue(item.precoCompra);
+              const venda = parseValue(item.precoVenda);
+
+              const isNegative = qtd < 0;
+              const isLowStock = !isNegative && qtd <= (material.minStock || 0);
+
+              const totalValue = Math.max(0, qtd) * compra;
+              const margin = calcMargin(compra, venda);
 
               return (
-                <tr 
-                  key={material.key} 
-                  className={`group hover:bg-slate-50 transition-colors ${isNegative ? 'bg-rose-50/30' : ''}`}
+                <tr
+                  key={material.key}
+                  className={`group hover:bg-slate-50 transition-colors ${isNegative ? "bg-rose-50/30" : ""}`}
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
@@ -55,9 +55,14 @@ export const InventoryTableView = memo(({ materials, inventory, onEdit }) => {
                         {material.icon}
                       </div>
                       <div>
-                        <p className="font-bold text-slate-800 text-base">{material.name}</p>
+                        <p className="font-bold text-slate-800 text-base">
+                          {material.name}
+                        </p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 font-normal text-slate-500 border-slate-200 bg-slate-50">
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] px-1.5 py-0 h-5 font-normal text-slate-500 border-slate-200 bg-slate-50"
+                          >
                             {material.category}
                           </Badge>
                           {isLowStock && (
@@ -74,9 +79,11 @@ export const InventoryTableView = memo(({ materials, inventory, onEdit }) => {
                       </div>
                     </div>
                   </td>
-                  
+
                   <td className="px-6 py-4 text-right">
-                    <span className={`font-bold text-base tabular-nums ${isNegative ? "text-rose-600" : isLowStock ? "text-amber-600" : "text-slate-700"}`}>
+                    <span
+                      className={`font-bold text-base tabular-nums ${isNegative ? "text-rose-600" : isLowStock ? "text-amber-600" : "text-slate-700"}`}
+                    >
                       {formatWeight(qtd)}
                     </span>
                   </td>
@@ -84,28 +91,33 @@ export const InventoryTableView = memo(({ materials, inventory, onEdit }) => {
                   <td className="px-6 py-4 text-right text-slate-600 tabular-nums font-medium">
                     {formatCurrency(compra)}
                   </td>
-                  
+
                   <td className="px-6 py-4 text-right text-emerald-600 tabular-nums font-medium">
                     {formatCurrency(venda)}
                   </td>
-                  
+
                   <td className="px-6 py-4 text-right font-bold text-slate-800 tabular-nums">
-                    {isNegative ? '---' : formatCurrency(totalValue)}
+                    {isNegative ? "---" : formatCurrency(totalValue)}
                   </td>
-                  
+
                   <td className="px-6 py-4 text-center">
-                    <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold tabular-nums border ${
-                      margin > 20 ? "bg-emerald-50 text-emerald-700 border-emerald-100" : 
-                      margin > 0 ? "bg-blue-50 text-blue-700 border-blue-100" : "bg-rose-50 text-rose-700 border-rose-100"
-                    }`}>
+                    <span
+                      className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold tabular-nums border ${
+                        margin > 20
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                          : margin > 0
+                            ? "bg-blue-50 text-blue-700 border-blue-100"
+                            : "bg-rose-50 text-rose-700 border-rose-100"
+                      }`}
+                    >
                       {formatPercent(margin)}
                     </span>
                   </td>
-                  
+
                   <td className="px-6 py-4 text-center">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => onEdit(material.key)}
                       className="h-9 w-9 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full"
                     >
@@ -113,12 +125,12 @@ export const InventoryTableView = memo(({ materials, inventory, onEdit }) => {
                     </Button>
                   </td>
                 </tr>
-              )
+              );
             })}
           </tbody>
         </table>
       </div>
     </div>
-  )
-})
-InventoryTableView.displayName = "InventoryTableView"
+  );
+});
+InventoryTableView.displayName = "InventoryTableView";

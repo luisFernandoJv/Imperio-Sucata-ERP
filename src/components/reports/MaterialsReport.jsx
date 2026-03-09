@@ -1,20 +1,27 @@
-"use client"
+"use client";
 
-import { useMemo, useState } from "react"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { BarChart3, TrendingUp, TrendingDown, Package, Target, Award } from "lucide-react"
-import { formatCurrency } from "@/lib/utils"
+import { useMemo, useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
+  Package,
+  Target,
+  Award,
+} from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 const MaterialsReport = ({ transactions }) => {
-  const [sortBy, setSortBy] = useState("lucro") // lucro, vendas, compras, margem
-  const [sortDirection, setSortDirection] = useState("desc")
+  const [sortBy, setSortBy] = useState("lucro"); // lucro, vendas, compras, margem
+  const [sortDirection, setSortDirection] = useState("desc");
 
   const materialStats = useMemo(() => {
-    const stats = {}
+    const stats = {};
 
     transactions.forEach((t) => {
-      if (t.tipo === "despesa") return // Excluindo despesas do relatório de materiais
+      if (t.tipo === "despesa") return; // Excluindo despesas do relatório de materiais
 
       if (!stats[t.material]) {
         stats[t.material] = {
@@ -26,60 +33,65 @@ const MaterialsReport = ({ transactions }) => {
           transacoesCompra: 0,
           precoMedioVenda: 0,
           precoMedioCompra: 0,
-        }
+        };
       }
 
       if (t.tipo === "venda") {
-        stats[t.material].vendas += t.valorTotal
-        stats[t.material].quantidadeVendida += t.quantidade
-        stats[t.material].transacoesVenda++
+        stats[t.material].vendas += t.valorTotal;
+        stats[t.material].quantidadeVendida += t.quantidade;
+        stats[t.material].transacoesVenda++;
       } else if (t.tipo === "compra") {
-        stats[t.material].compras += t.valorTotal
-        stats[t.material].quantidadeComprada += t.quantidade
-        stats[t.material].transacoesCompra++
+        stats[t.material].compras += t.valorTotal;
+        stats[t.material].quantidadeComprada += t.quantidade;
+        stats[t.material].transacoesCompra++;
       }
-    })
+    });
 
     Object.keys(stats).forEach((material) => {
-      const data = stats[material]
-      data.lucro = data.vendas - data.compras
-      data.margem = data.vendas > 0 ? (data.lucro / data.vendas) * 100 : 0
-      data.precoMedioVenda = data.quantidadeVendida > 0 ? data.vendas / data.quantidadeVendida : 0
-      data.precoMedioCompra = data.quantidadeComprada > 0 ? data.compras / data.quantidadeComprada : 0
-      data.giro = data.quantidadeVendida + data.quantidadeComprada
-      data.roi = data.compras > 0 ? (data.lucro / data.compras) * 100 : 0
-    })
+      const data = stats[material];
+      data.lucro = data.vendas - data.compras;
+      data.margem = data.vendas > 0 ? (data.lucro / data.vendas) * 100 : 0;
+      data.precoMedioVenda =
+        data.quantidadeVendida > 0 ? data.vendas / data.quantidadeVendida : 0;
+      data.precoMedioCompra =
+        data.quantidadeComprada > 0
+          ? data.compras / data.quantidadeComprada
+          : 0;
+      data.giro = data.quantidadeVendida + data.quantidadeComprada;
+      data.roi = data.compras > 0 ? (data.lucro / data.compras) * 100 : 0;
+    });
 
-    return stats
-  }, [transactions])
+    return stats;
+  }, [transactions]);
 
   const sortedMaterials = useMemo(() => {
     return Object.entries(materialStats).sort((a, b) => {
-      const aValue = a[1][sortBy]
-      const bValue = b[1][sortBy]
+      const aValue = a[1][sortBy];
+      const bValue = b[1][sortBy];
 
       if (sortDirection === "desc") {
-        return bValue - aValue
+        return bValue - aValue;
       } else {
-        return aValue - bValue
+        return aValue - bValue;
       }
-    })
-  }, [materialStats, sortBy, sortDirection])
+    });
+  }, [materialStats, sortBy, sortDirection]);
 
   const handleSort = (field) => {
     if (sortBy === field) {
-      setSortDirection(sortDirection === "desc" ? "asc" : "desc")
+      setSortDirection(sortDirection === "desc" ? "asc" : "desc");
     } else {
-      setSortBy(field)
-      setSortDirection("desc")
+      setSortBy(field);
+      setSortDirection("desc");
     }
-  }
+  };
 
   const overallStats = useMemo(() => {
-    const materials = Object.values(materialStats)
-    const totalVendas = materials.reduce((sum, m) => sum + m.vendas, 0)
-    const totalCompras = materials.reduce((sum, m) => sum + m.compras, 0)
-    const totalLucro = totalVendas - totalCompras
+    const materials = Object.values(materialStats);
+    const totalVendas = materials.reduce((sum, m) => sum + m.vendas, 0);
+    const totalCompras = materials.reduce((sum, m) => sum + m.compras, 0);
+    // LUCRO = Vendas (compras sao investimento em estoque)
+    const totalLucro = totalVendas;
 
     return {
       totalMateriais: materials.length,
@@ -90,18 +102,20 @@ const MaterialsReport = ({ transactions }) => {
       materialMaisLucrativo:
         materials.length > 0
           ? Object.entries(materialStats).reduce(
-              (max, [name, data]) => (data.lucro > max.lucro ? { name, ...data } : max),
+              (max, [name, data]) =>
+                data.lucro > max.lucro ? { name, ...data } : max,
               { name: "", lucro: Number.NEGATIVE_INFINITY },
             )
           : null,
-    }
-  }, [materialStats])
+    };
+  }, [materialStats]);
 
   return (
     <Card className="p-6 shadow-lg border-0 bg-white">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
         <h3 className="text-xl font-bold text-gray-900 flex items-center mb-4 lg:mb-0">
-          <BarChart3 className="h-6 w-6 mr-2 text-purple-600" />🏭 Análise Detalhada por Material
+          <BarChart3 className="h-6 w-6 mr-2 text-purple-600" />
+          🏭 Análise Detalhada por Material
         </h3>
 
         <div className="flex flex-wrap gap-2">
@@ -144,12 +158,16 @@ const MaterialsReport = ({ transactions }) => {
         <div className="text-center">
           <Package className="h-6 w-6 text-purple-600 mx-auto mb-2" />
           <p className="text-sm text-gray-600">Total de Materiais</p>
-          <p className="text-xl font-bold text-purple-600">{overallStats.totalMateriais}</p>
+          <p className="text-xl font-bold text-purple-600">
+            {overallStats.totalMateriais}
+          </p>
         </div>
         <div className="text-center">
           <Target className="h-6 w-6 text-green-600 mx-auto mb-2" />
           <p className="text-sm text-gray-600">Margem Geral</p>
-          <p className="text-xl font-bold text-green-600">{overallStats.margemGeral.toFixed(1)}%</p>
+          <p className="text-xl font-bold text-green-600">
+            {overallStats.margemGeral.toFixed(1)}%
+          </p>
         </div>
         <div className="text-center">
           <Award className="h-6 w-6 text-yellow-600 mx-auto mb-2" />
@@ -158,13 +176,17 @@ const MaterialsReport = ({ transactions }) => {
             {overallStats.materialMaisLucrativo?.name || "N/A"}
           </p>
           <p className="text-xs text-gray-500">
-            {overallStats.materialMaisLucrativo ? formatCurrency(overallStats.materialMaisLucrativo.lucro) : ""}
+            {overallStats.materialMaisLucrativo
+              ? formatCurrency(overallStats.materialMaisLucrativo.lucro)
+              : ""}
           </p>
         </div>
         <div className="text-center">
           <TrendingUp className="h-6 w-6 text-blue-600 mx-auto mb-2" />
           <p className="text-sm text-gray-600">Lucro Total</p>
-          <p className={`text-xl font-bold ${overallStats.totalLucro >= 0 ? "text-green-600" : "text-red-600"}`}>
+          <p
+            className={`text-xl font-bold ${overallStats.totalLucro >= 0 ? "text-green-600" : "text-red-600"}`}
+          >
             {formatCurrency(overallStats.totalLucro)}
           </p>
         </div>
@@ -173,8 +195,12 @@ const MaterialsReport = ({ transactions }) => {
       {sortedMaterials.length === 0 ? (
         <div className="text-center py-12">
           <BarChart3 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-lg text-gray-500 mb-2">Nenhum material encontrado</p>
-          <p className="text-sm text-gray-400">Adicione transações de compra e venda para visualizar a análise</p>
+          <p className="text-lg text-gray-500 mb-2">
+            Nenhum material encontrado
+          </p>
+          <p className="text-sm text-gray-400">
+            Adicione transações de compra e venda para visualizar a análise
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -184,25 +210,39 @@ const MaterialsReport = ({ transactions }) => {
               className="p-6 border-2 rounded-xl bg-gradient-to-br from-white to-gray-50 shadow-sm hover:shadow-md transition-all duration-300"
             >
               <div className="flex items-center justify-between mb-4">
-                <h4 className="text-lg font-bold text-gray-900 capitalize flex items-center">🏭 {material}</h4>
+                <h4 className="text-lg font-bold text-gray-900 capitalize flex items-center">
+                  🏭 {material}
+                </h4>
                 <div className="flex items-center gap-2">
-                  {data.margem >= 30 && <span className="text-green-500 text-xl">🚀</span>}
-                  {data.margem >= 15 && data.margem < 30 && <span className="text-yellow-500 text-xl">⚡</span>}
-                  {data.margem < 15 && data.margem >= 0 && <span className="text-orange-500 text-xl">⚠️</span>}
-                  {data.margem < 0 && <span className="text-red-500 text-xl">🔻</span>}
+                  {data.margem >= 30 && (
+                    <span className="text-green-500 text-xl">🚀</span>
+                  )}
+                  {data.margem >= 15 && data.margem < 30 && (
+                    <span className="text-yellow-500 text-xl">⚡</span>
+                  )}
+                  {data.margem < 15 && data.margem >= 0 && (
+                    <span className="text-orange-500 text-xl">⚠️</span>
+                  )}
+                  {data.margem < 0 && (
+                    <span className="text-red-500 text-xl">🔻</span>
+                  )}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="text-center p-3 bg-green-50 rounded-lg border border-green-100">
                   <p className="text-xs text-green-700 font-medium">💰 Lucro</p>
-                  <p className={`text-lg font-bold ${data.lucro >= 0 ? "text-green-600" : "text-red-600"}`}>
+                  <p
+                    className={`text-lg font-bold ${data.lucro >= 0 ? "text-green-600" : "text-red-600"}`}
+                  >
                     {formatCurrency(data.lucro)}
                   </p>
                 </div>
                 <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-100">
                   <p className="text-xs text-blue-700 font-medium">📊 Margem</p>
-                  <p className={`text-lg font-bold ${data.margem >= 0 ? "text-blue-600" : "text-red-600"}`}>
+                  <p
+                    className={`text-lg font-bold ${data.margem >= 0 ? "text-blue-600" : "text-red-600"}`}
+                  >
                     {data.margem.toFixed(1)}%
                   </p>
                 </div>
@@ -214,7 +254,9 @@ const MaterialsReport = ({ transactions }) => {
                     <TrendingUp className="h-4 w-4 mr-1 text-green-600" />
                     Vendas:
                   </span>
-                  <span className="font-semibold text-green-600">{formatCurrency(data.vendas)}</span>
+                  <span className="font-semibold text-green-600">
+                    {formatCurrency(data.vendas)}
+                  </span>
                 </div>
 
                 <div className="flex justify-between items-center p-2 bg-blue-25 rounded">
@@ -222,32 +264,46 @@ const MaterialsReport = ({ transactions }) => {
                     <TrendingDown className="h-4 w-4 mr-1 text-blue-600" />
                     Compras:
                   </span>
-                  <span className="font-semibold text-blue-600">{formatCurrency(data.compras)}</span>
+                  <span className="font-semibold text-blue-600">
+                    {formatCurrency(data.compras)}
+                  </span>
                 </div>
 
                 <div className="pt-3 border-t border-gray-200 space-y-2">
                   <div className="flex justify-between text-xs">
                     <span className="text-gray-500">⚖️ Kg Vendidos:</span>
-                    <span className="font-medium">{data.quantidadeVendida.toFixed(2)}</span>
+                    <span className="font-medium">
+                      {data.quantidadeVendida.toFixed(2)}
+                    </span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-gray-500">⚖️ Kg Comprados:</span>
-                    <span className="font-medium">{data.quantidadeComprada.toFixed(2)}</span>
+                    <span className="font-medium">
+                      {data.quantidadeComprada.toFixed(2)}
+                    </span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-gray-500">💵 Preço Médio Venda:</span>
-                    <span className="font-medium">{formatCurrency(data.precoMedioVenda)}</span>
+                    <span className="font-medium">
+                      {formatCurrency(data.precoMedioVenda)}
+                    </span>
                   </div>
                   <div className="flex justify-between text-xs">
-                    <span className="text-gray-500">💵 Preço Médio Compra:</span>
-                    <span className="font-medium">{formatCurrency(data.precoMedioCompra)}</span>
+                    <span className="text-gray-500">
+                      💵 Preço Médio Compra:
+                    </span>
+                    <span className="font-medium">
+                      {formatCurrency(data.precoMedioCompra)}
+                    </span>
                   </div>
                 </div>
 
                 <div className="pt-3 border-t border-gray-200">
                   <div className="flex justify-between text-xs mb-2">
                     <span className="text-gray-500">🎯 ROI:</span>
-                    <span className={`font-semibold ${data.roi >= 0 ? "text-green-600" : "text-red-600"}`}>
+                    <span
+                      className={`font-semibold ${data.roi >= 0 ? "text-green-600" : "text-red-600"}`}
+                    >
                       {data.roi.toFixed(1)}%
                     </span>
                   </div>
@@ -267,7 +323,7 @@ const MaterialsReport = ({ transactions }) => {
         </div>
       )}
     </Card>
-  )
-}
+  );
+};
 
-export default MaterialsReport
+export default MaterialsReport;

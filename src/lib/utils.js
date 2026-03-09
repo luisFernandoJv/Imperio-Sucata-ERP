@@ -1,5 +1,5 @@
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -8,11 +8,11 @@ export function cn(...inputs) {
 // Helper interno para garantir números seguros
 const safeNum = (value) => {
   if (value === null || value === undefined) return 0;
-  if (typeof value === 'number') return isNaN(value) ? 0 : value;
-  
+  if (typeof value === "number") return isNaN(value) ? 0 : value;
+
   // Tratamento para strings (ex: "1.200,50" ou "1200.50")
-  if (typeof value === 'string') {
-    const clean = value.replace(/[^\d.,-]/g, '').replace(',', '.');
+  if (typeof value === "string") {
+    const clean = value.replace(/[^\d.,-]/g, "").replace(",", ".");
     const parsed = parseFloat(clean);
     return isNaN(parsed) ? 0 : parsed;
   }
@@ -20,88 +20,110 @@ const safeNum = (value) => {
 };
 
 export const formatCurrency = (value) => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
   }).format(safeNum(value));
 };
 
 export const formatPercent = (value) => {
   // Limita estritamente a 1 casa decimal e trata o erro de NaN
   const num = safeNum(value);
-  return new Intl.NumberFormat('pt-BR', {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1
-  }).format(num) + '%';
+  return (
+    new Intl.NumberFormat("pt-BR", {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }).format(num) + "%"
+  );
 };
 
 export const formatWeight = (value) => {
   const num = safeNum(value);
   // Se for inteiro, não mostra decimais. Se tiver fração, mostra até 2.
-  return new Intl.NumberFormat('pt-BR', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2
-  }).format(num) + 'kg';
+  return (
+    new Intl.NumberFormat("pt-BR", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(num) + "kg"
+  );
 };
 
 export const formatNumber = (value, decimals = 0) => {
-  return new Intl.NumberFormat('pt-BR', {
+  return new Intl.NumberFormat("pt-BR", {
     minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals
+    maximumFractionDigits: decimals,
   }).format(safeNum(value));
 };
 
 export const formatDate = (dateString) => {
-  if (!dateString) return '--/--/----';
+  if (!dateString) return "--/--/----";
   try {
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  } catch (e) { return '--/--/----'; }
+    return new Date(dateString).toLocaleDateString("pt-BR");
+  } catch (e) {
+    return "--/--/----";
+  }
 };
 
 export const formatDateTime = (dateString) => {
-  if (!dateString) return '';
+  if (!dateString) return "";
   try {
-    return new Date(dateString).toLocaleString('pt-BR', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-      hour: '2-digit', minute: '2-digit'
+    return new Date(dateString).toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
-  } catch (e) { return ''; }
+  } catch (e) {
+    return "";
+  }
 };
 
-export const exportToCSV = (data, filename = 'relatorio.csv') => {
+export const exportToCSV = (data, filename = "relatorio.csv") => {
   if (!data || data.length === 0) return;
-  
+
   const headers = Object.keys(data[0]);
   const csvRows = [
-    headers.join(';'),
-    ...data.map(row => 
-      headers.map(fieldName => 
-        JSON.stringify(row[fieldName], (key, value) => value === null ? '' : value)
-      ).join(';')
-    )
+    headers.join(";"),
+    ...data.map((row) =>
+      headers
+        .map((fieldName) =>
+          JSON.stringify(row[fieldName], (key, value) =>
+            value === null ? "" : value,
+          ),
+        )
+        .join(";"),
+    ),
   ];
 
-  const csvString = csvRows.join('\r\n');
-  const blob = new Blob([`\uFEFF${csvString}`], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
+  const csvString = csvRows.join("\r\n");
+  const blob = new Blob([`\uFEFF${csvString}`], {
+    type: "text/csv;charset=utf-8;",
+  });
+  const link = document.createElement("a");
   if (link.download !== undefined) {
     const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
     link.click();
   }
 };
 
 export const printInventory = (inventory, materials) => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return alert('Por favor, permita popups para imprimir.');
-    
-    const rows = materials.map(material => {
-      const item = inventory[material.key] || { quantidade: 0, precoCompra: 0, precoVenda: 0 };
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) return alert("Por favor, permita popups para imprimir.");
+
+  const rows = materials
+    .map((material) => {
+      const item = inventory[material.key] || {
+        quantidade: 0,
+        precoCompra: 0,
+        precoVenda: 0,
+      };
       const total = (item.quantidade || 0) * (item.precoCompra || 0);
-      
+
       return `
         <tr>
           <td>${material.name}</td>
@@ -112,9 +134,10 @@ export const printInventory = (inventory, materials) => {
           <td style="text-align: right; font-weight: bold;">${formatCurrency(total)}</td>
         </tr>
       `;
-    }).join('');
-  
-    printWindow.document.write(`
+    })
+    .join("");
+
+  printWindow.document.write(`
       <html>
         <head>
           <title>Relatório de Estoque - Império Sucata</title>
@@ -132,7 +155,7 @@ export const printInventory = (inventory, materials) => {
         <body>
           <h1>Relatório de Estoque</h1>
           <div class="header-info">
-            <p>Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
+            <p>Gerado em: ${new Date().toLocaleString("pt-BR")}</p>
           </div>
           <table>
             <thead>
@@ -158,36 +181,52 @@ export const printInventory = (inventory, materials) => {
         </body>
       </html>
     `);
-    printWindow.document.close();
-  };
-  
-  export const exportInventoryToCSV = (inventory, materials) => {
-    if (!materials || materials.length === 0) return;
-  
-    const headers = ['Material', 'Categoria', 'Quantidade (kg)', 'Preço Compra', 'Preço Venda', 'Valor Total'];
-    
-    const rows = materials.map(material => {
-      const item = inventory[material.key] || { quantidade: 0, precoCompra: 0, precoVenda: 0 };
-      const total = (item.quantidade || 0) * (item.precoCompra || 0);
-      
-      return [
-        material.name,
-        material.category,
-        (item.quantidade || 0).toFixed(2).replace('.', ','),
-        (item.precoCompra || 0).toFixed(2).replace('.', ','),
-        (item.precoVenda || 0).toFixed(2).replace('.', ','),
-        total.toFixed(2).replace('.', ',')
-      ].join(';');
-    });
-  
-    const csvContent = [headers.join(';'), ...rows].join('\r\n');
-    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `estoque_imperio_${new Date().toISOString().slice(0,10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  printWindow.document.close();
+};
+
+export const exportInventoryToCSV = (inventory, materials) => {
+  if (!materials || materials.length === 0) return;
+
+  const headers = [
+    "Material",
+    "Categoria",
+    "Quantidade (kg)",
+    "Preço Compra",
+    "Preço Venda",
+    "Valor Total",
+  ];
+
+  const rows = materials.map((material) => {
+    const item = inventory[material.key] || {
+      quantidade: 0,
+      precoCompra: 0,
+      precoVenda: 0,
+    };
+    const total = (item.quantidade || 0) * (item.precoCompra || 0);
+
+    return [
+      material.name,
+      material.category,
+      (item.quantidade || 0).toFixed(2).replace(".", ","),
+      (item.precoCompra || 0).toFixed(2).replace(".", ","),
+      (item.precoVenda || 0).toFixed(2).replace(".", ","),
+      total.toFixed(2).replace(".", ","),
+    ].join(";");
+  });
+
+  const csvContent = [headers.join(";"), ...rows].join("\r\n");
+  const blob = new Blob([`\uFEFF${csvContent}`], {
+    type: "text/csv;charset=utf-8;",
+  });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute(
+    "download",
+    `estoque_imperio_${new Date().toISOString().slice(0, 10)}.csv`,
+  );
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};

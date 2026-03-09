@@ -1,14 +1,17 @@
-"use client"
-import { Helmet } from "react-helmet-async"
-import { motion } from "framer-motion"
-import OptimizedReports from "@/components/reports/OptimizedReports"
+"use client";
+import { Helmet } from "react-helmet-async";
+import { motion } from "framer-motion";
+import OptimizedReports from "@/components/reports/OptimizedReports";
 
 export default function ReportsPage() {
   return (
     <>
       <Helmet>
-        <title>Relatórios - Império Sucata</title>
-        <meta name="description" content="Sistema de relatórios otimizado com exportação profissional." />
+        <title>RelatÃģrios - ImpÃĐrio Sucata</title>
+        <meta
+          name="description"
+          content="Sistema de relatÃģrios otimizado com exportaÃ§ÃĢo profissional."
+        />
       </Helmet>
       <motion.div
         initial={{ opacity: 0 }}
@@ -19,5 +22,5 @@ export default function ReportsPage() {
         <OptimizedReports />
       </motion.div>
     </>
-  )
+  );
 }

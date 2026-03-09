@@ -1,9 +1,18 @@
-"use client"
+"use client";
 
-import React from "react"
-import { Outlet, Link, useLocation } from "react-router-dom"
-import { motion } from "framer-motion"
-import { LayoutDashboard, ArrowRightLeft, BarChart3, Settings, Package, LogOut, Menu, X } from "lucide-react"
+import React from "react";
+import { Outlet, Link, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  LayoutDashboard,
+  ArrowRightLeft,
+  BarChart3,
+  Settings,
+  Package,
+  LogOut,
+  Menu,
+  X,
+} from "lucide-react";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Painel" },
@@ -11,61 +20,63 @@ const navItems = [
   { to: "/estoque", icon: Package, label: "Estoque" },
   { to: "/relatorios", icon: BarChart3, label: "Relatórios" },
   { to: "/configuracoes", icon: Settings, label: "Configurações" },
-]
+];
 
 const NavLink = ({ to, icon: Icon, label, isExpanded, onClick }) => {
-  const location = useLocation()
-  const isActive = location.pathname === to
+  const location = useLocation();
+  const isActive = location.pathname === to;
 
   return (
     <Link to={to} onClick={onClick}>
       <div
         className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 ${
-          isActive ? "bg-blue-100 text-blue-700 shadow-sm" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+          isActive
+            ? "bg-blue-100 text-blue-700 shadow-sm"
+            : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
         } ${!isExpanded ? "justify-center" : ""}`}
       >
         <Icon className="h-5 w-5 flex-shrink-0" />
         {isExpanded && <span className="font-medium">{label}</span>}
       </div>
     </Link>
-  )
-}
+  );
+};
 
 export default function DashboardLayout() {
-  const [isExpanded, setIsExpanded] = React.useState(false)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
-  const [isMobile, setIsMobile] = React.useState(false)
+  const [isExpanded, setIsExpanded] = React.useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [isMobile, setIsMobile] = React.useState(false);
 
   React.useEffect(() => {
     const checkScreenSize = () => {
-      const mobile = window.innerWidth < 768
-      const tablet = window.innerWidth >= 768 && window.innerWidth < 1024
+      const mobile = window.innerWidth < 768;
+      const tablet = window.innerWidth >= 768 && window.innerWidth < 1024;
 
-      setIsMobile(mobile)
+      setIsMobile(mobile);
 
       if (mobile) {
-        setIsExpanded(false)
+        setIsExpanded(false);
       } else if (tablet) {
-        setIsExpanded(false)
+        setIsExpanded(false);
       } else {
-        setIsExpanded(true)
+        setIsExpanded(true);
       }
-    }
+    };
 
-    checkScreenSize()
-    window.addEventListener("resize", checkScreenSize)
-    return () => window.removeEventListener("resize", checkScreenSize)
-  }, [])
+    checkScreenSize();
+    window.addEventListener("resize", checkScreenSize);
+    return () => window.removeEventListener("resize", checkScreenSize);
+  }, []);
 
   const handleNavClick = () => {
     if (isMobile) {
-      setIsMobileMenuOpen(false)
+      setIsMobileMenuOpen(false);
     }
-  }
+  };
 
   const handleLogout = () => {
-    console.log("Logout clicked")
-  }
+    console.log("Logout clicked");
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -79,7 +90,13 @@ export default function DashboardLayout() {
       <motion.aside
         initial={false}
         animate={{
-          width: isMobile ? (isMobileMenuOpen ? 280 : 0) : isExpanded ? 280 : 70,
+          width: isMobile
+            ? isMobileMenuOpen
+              ? 280
+              : 0
+            : isExpanded
+              ? 280
+              : 70,
           x: isMobile && !isMobileMenuOpen ? -280 : 0,
         }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
@@ -96,7 +113,9 @@ export default function DashboardLayout() {
             </div>
             {(isExpanded || isMobileMenuOpen) && (
               <div>
-                <h1 className="text-lg font-bold text-gray-900">Império Sucata</h1>
+                <h1 className="text-lg font-bold text-gray-900">
+                  Império Sucata
+                </h1>
                 <p className="text-xs text-gray-500">Sistema de Gestão</p>
               </div>
             )}
@@ -114,7 +133,12 @@ export default function DashboardLayout() {
 
         <nav className="flex-1 p-4 space-y-2">
           {navItems.map((item) => (
-            <NavLink key={item.to} {...item} isExpanded={isExpanded || isMobileMenuOpen} onClick={handleNavClick} />
+            <NavLink
+              key={item.to}
+              {...item}
+              isExpanded={isExpanded || isMobileMenuOpen}
+              onClick={handleNavClick}
+            />
           ))}
         </nav>
 
@@ -126,7 +150,9 @@ export default function DashboardLayout() {
             }`}
           >
             <LogOut className="h-5 w-5 flex-shrink-0" />
-            {(isExpanded || isMobileMenuOpen) && <span className="font-medium">Sair</span>}
+            {(isExpanded || isMobileMenuOpen) && (
+              <span className="font-medium">Sair</span>
+            )}
           </button>
         </div>
       </motion.aside>
@@ -162,5 +188,5 @@ export default function DashboardLayout() {
         </div>
       </main>
     </div>
-  )
+  );
 }

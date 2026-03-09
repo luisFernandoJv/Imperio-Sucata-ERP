@@ -1,4 +1,4 @@
-import { z } from "zod"
+import { z } from "zod";
 
 export const transactionSchema = z.object({
   tipo: z.enum(["compra", "venda", "despesa"], {
@@ -20,21 +20,24 @@ export const transactionSchema = z.object({
   valorTotal: z.number().positive("Valor total deve ser positivo"),
   vendedor: z.string().optional(),
   observacoes: z.string().optional(),
-  formaPagamento: z.enum(["dinheiro", "pix", "cartao_credito", "cartao_debito", "transferencia"], {
-    required_error: "Forma de pagamento é obrigatória",
-  }),
+  formaPagamento: z.enum(
+    ["dinheiro", "pix", "cartao_credito", "cartao_debito", "transferencia"],
+    {
+      required_error: "Forma de pagamento é obrigatória",
+    },
+  ),
   numeroTransacao: z.string().optional(),
   data: z.date({
     required_error: "Data é obrigatória",
   }),
-})
+});
 
 export const inventorySchema = z.object({
   quantidade: z.number().min(0, "Quantidade não pode ser negativa"),
   precoCompra: z.number().positive("Preço de compra deve ser positivo"),
   precoVenda: z.number().positive("Preço de venda deve ser positivo"),
   minLevel: z.number().min(0, "Nível mínimo não pode ser negativo").optional(),
-})
+});
 
 export const expenseSchema = z.object({
   tipo: z.literal("despesa"),
@@ -44,6 +47,12 @@ export const expenseSchema = z.object({
   data: z.date({
     required_error: "Data é obrigatória",
   }),
-  formaPagamento: z.enum(["dinheiro", "pix", "cartao_credito", "cartao_debito", "transferencia"]),
+  formaPagamento: z.enum([
+    "dinheiro",
+    "pix",
+    "cartao_credito",
+    "cartao_debito",
+    "transferencia",
+  ]),
   observacoes: z.string().optional(),
-})
+});

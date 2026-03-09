@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   X,
   Save,
@@ -25,19 +25,19 @@ import {
   TrendingDown,
   Minus,
   Info,
-} from "lucide-react"
-import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
+} from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 // Formatador de moeda
 const formatCurrency = (value) => {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
-  }).format(value || 0)
-}
+  }).format(value || 0);
+};
 
-const TransactionEditModal = ({ transaction, onSave, onCancel }) => {
+const TransactionEditModal = ({ transaction, onSave, onClose: onCancel }) => {
   const [formData, setFormData] = useState({
     id: "",
     tipo: "",
@@ -50,14 +50,14 @@ const TransactionEditModal = ({ transaction, onSave, onCancel }) => {
     data: "",
     formaPagamento: "",
     numeroTransacao: "",
-  })
+  });
 
-  const [errors, setErrors] = useState({})
-  const [isSaving, setIsSaving] = useState(false)
-  const [hasChanges, setHasChanges] = useState(false)
+  const [errors, setErrors] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
   // Dados originais para comparação
-  const [originalData, setOriginalData] = useState(null)
+  const [originalData, setOriginalData] = useState(null);
 
   useEffect(() => {
     if (transaction) {
@@ -68,105 +68,124 @@ const TransactionEditModal = ({ transaction, onSave, onCancel }) => {
         quantidade: transaction.quantidade?.toString() || "",
         precoUnitario: transaction.precoUnitario?.toString() || "",
         valorTotal: transaction.valorTotal?.toString() || "",
-        vendedor: transaction.vendedor || transaction.cliente || transaction.fornecedor || "",
+        vendedor:
+          transaction.vendedor ||
+          transaction.cliente ||
+          transaction.fornecedor ||
+          "",
         observacoes: transaction.observacoes || "",
-        data: transaction.data ? new Date(transaction.data).toISOString().slice(0, 16) : "",
+        data: transaction.data
+          ? new Date(transaction.data).toISOString().slice(0, 16)
+          : "",
         formaPagamento: transaction.formaPagamento || "dinheiro",
         numeroTransacao: transaction.numeroTransacao || "",
-      }
-      setFormData(initialData)
-      setOriginalData(initialData)
+      };
+      setFormData(initialData);
+      setOriginalData(initialData);
     }
-  }, [transaction])
+  }, [transaction]);
 
   // Detectar mudanças
   useEffect(() => {
     if (originalData) {
-      const changed = Object.keys(formData).some((key) => formData[key] !== originalData[key])
-      setHasChanges(changed)
+      const changed = Object.keys(formData).some(
+        (key) => formData[key] !== originalData[key],
+      );
+      setHasChanges(changed);
     }
-  }, [formData, originalData])
+  }, [formData, originalData]);
 
   const handleInputChange = useCallback(
     (field, value) => {
       setFormData((prev) => {
-        const newData = { ...prev, [field]: value }
+        const newData = { ...prev, [field]: value };
 
         // Cálculo automático do valor total
         if (field === "quantidade" || field === "precoUnitario") {
           const quantidade =
-            field === "quantidade" ? Number.parseFloat(value) || 0 : Number.parseFloat(prev.quantidade) || 0
+            field === "quantidade"
+              ? Number.parseFloat(value) || 0
+              : Number.parseFloat(prev.quantidade) || 0;
           const precoUnitario =
-            field === "precoUnitario" ? Number.parseFloat(value) || 0 : Number.parseFloat(prev.precoUnitario) || 0
-          const valorTotal = quantidade * precoUnitario
-          newData.valorTotal = valorTotal.toFixed(2)
+            field === "precoUnitario"
+              ? Number.parseFloat(value) || 0
+              : Number.parseFloat(prev.precoUnitario) || 0;
+          const valorTotal = quantidade * precoUnitario;
+          newData.valorTotal = valorTotal.toFixed(2);
         }
 
-        return newData
-      })
+        return newData;
+      });
 
       if (errors[field]) {
-        setErrors((prev) => ({ ...prev, [field]: "" }))
+        setErrors((prev) => ({ ...prev, [field]: "" }));
       }
     },
     [errors],
-  )
+  );
 
   const validateForm = useCallback(() => {
-    const newErrors = {}
+    const newErrors = {};
 
-    if (!formData.tipo) newErrors.tipo = "Tipo é obrigatório"
-    if (!formData.data) newErrors.data = "Data é obrigatória"
+    if (!formData.tipo) newErrors.tipo = "Tipo é obrigatório";
+    if (!formData.data) newErrors.data = "Data é obrigatória";
 
     if (formData.tipo !== "despesa") {
-      if (!formData.material) newErrors.material = "Material é obrigatório"
+      if (!formData.material) newErrors.material = "Material é obrigatório";
       if (!formData.quantidade || Number.parseFloat(formData.quantidade) <= 0) {
-        newErrors.quantidade = "Quantidade deve ser maior que zero"
+        newErrors.quantidade = "Quantidade deve ser maior que zero";
       }
-      if (!formData.precoUnitario || Number.parseFloat(formData.precoUnitario) <= 0) {
-        newErrors.precoUnitario = "Preço deve ser maior que zero"
+      if (
+        !formData.precoUnitario ||
+        Number.parseFloat(formData.precoUnitario) <= 0
+      ) {
+        newErrors.precoUnitario = "Preço deve ser maior que zero";
       }
     } else {
       if (!formData.valorTotal || Number.parseFloat(formData.valorTotal) <= 0) {
-        newErrors.valorTotal = "Valor deve ser maior que zero"
+        newErrors.valorTotal = "Valor deve ser maior que zero";
       }
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }, [formData])
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [formData]);
 
   const handleSubmit = useCallback(
     async (e) => {
-      e.preventDefault()
+      e.preventDefault();
 
-      if (!validateForm()) return
+      if (!validateForm()) return;
 
-      setIsSaving(true)
+      setIsSaving(true);
       try {
         const updatedTransaction = {
           id: formData.id,
           tipo: formData.tipo,
           material: formData.material,
-          quantidade: formData.quantidade ? Number.parseFloat(formData.quantidade) : null,
-          precoUnitario: formData.precoUnitario ? Number.parseFloat(formData.precoUnitario) : null,
+          quantidade: formData.quantidade
+            ? Number.parseFloat(formData.quantidade)
+            : null,
+          precoUnitario: formData.precoUnitario
+            ? Number.parseFloat(formData.precoUnitario)
+            : null,
           valorTotal: Number.parseFloat(formData.valorTotal),
           vendedor: formData.vendedor,
           observacoes: formData.observacoes,
           data: new Date(formData.data).toISOString(),
           formaPagamento: formData.formaPagamento,
           numeroTransacao: formData.numeroTransacao,
-        }
+        };
 
-        await onSave(updatedTransaction)
+        await onSave(updatedTransaction);
       } catch (error) {
-        console.error("Erro ao salvar:", error)
+        console.error("Erro ao salvar:", error);
       } finally {
-        setIsSaving(false)
+        setIsSaving(false);
       }
     },
     [formData, validateForm, onSave],
-  )
+  );
 
   const materialOptions = useMemo(
     () => [
@@ -187,7 +206,7 @@ const TransactionEditModal = ({ transaction, onSave, onCancel }) => {
       "Sucata Eletrônica",
     ],
     [],
-  )
+  );
 
   // Estilos baseados no tipo
   const tipoStyles = useMemo(
@@ -218,11 +237,11 @@ const TransactionEditModal = ({ transaction, onSave, onCancel }) => {
       },
     }),
     [],
-  )
+  );
 
-  const currentStyle = tipoStyles[formData.tipo] || tipoStyles.venda
+  const currentStyle = tipoStyles[formData.tipo] || tipoStyles.venda;
 
-  if (!transaction) return null
+  if (!transaction) return null;
 
   return (
     <div
@@ -234,7 +253,9 @@ const TransactionEditModal = ({ transaction, onSave, onCancel }) => {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header com Gradiente */}
-        <div className={`bg-gradient-to-r ${currentStyle.gradient} p-5 text-white`}>
+        <div
+          className={`bg-gradient-to-r ${currentStyle.gradient} p-5 text-white`}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm">
@@ -274,20 +295,29 @@ const TransactionEditModal = ({ transaction, onSave, onCancel }) => {
               <span>Criado em: </span>
               <span className="font-medium text-slate-800">
                 {transaction.data
-                  ? format(new Date(transaction.data), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+                  ? format(
+                      new Date(transaction.data),
+                      "dd/MM/yyyy 'às' HH:mm",
+                      { locale: ptBR },
+                    )
                   : "Data não disponível"}
               </span>
             </div>
             <div className="flex items-center gap-2 text-slate-600">
               <Receipt className="h-4 w-4 text-slate-400" />
               <span>Valor Original: </span>
-              <span className={`font-bold ${currentStyle.text}`}>{formatCurrency(transaction.valorTotal)}</span>
+              <span className={`font-bold ${currentStyle.text}`}>
+                {formatCurrency(transaction.valorTotal)}
+              </span>
             </div>
           </div>
         </div>
 
         {/* Formulário */}
-        <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[calc(95vh-280px)]">
+        <form
+          onSubmit={handleSubmit}
+          className="overflow-y-auto max-h-[calc(95vh-280px)]"
+        >
           <div className="p-5 space-y-5">
             {/* Tipo e Data - Seção Principal */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -300,7 +330,7 @@ const TransactionEditModal = ({ transaction, onSave, onCancel }) => {
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {Object.entries(tipoStyles).map(([key, style]) => {
-                    const Icon = style.icon
+                    const Icon = style.icon;
                     return (
                       <button
                         key={key}
@@ -313,9 +343,11 @@ const TransactionEditModal = ({ transaction, onSave, onCancel }) => {
                         }`}
                       >
                         <Icon className="h-5 w-5" />
-                        <span className="text-xs font-semibold">{style.label}</span>
+                        <span className="text-xs font-semibold">
+                          {style.label}
+                        </span>
                       </button>
-                    )
+                    );
                   })}
                 </div>
                 {errors.tipo && (
@@ -338,7 +370,9 @@ const TransactionEditModal = ({ transaction, onSave, onCancel }) => {
                   value={formData.data}
                   onChange={(e) => handleInputChange("data", e.target.value)}
                   className={`w-full p-3 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all ${
-                    errors.data ? "border-red-300 bg-red-50" : "border-slate-200 bg-white hover:border-slate-300"
+                    errors.data
+                      ? "border-red-300 bg-red-50"
+                      : "border-slate-200 bg-white hover:border-slate-300"
                   }`}
                 />
                 {errors.data && (
@@ -360,9 +394,13 @@ const TransactionEditModal = ({ transaction, onSave, onCancel }) => {
                 </label>
                 <select
                   value={formData.material}
-                  onChange={(e) => handleInputChange("material", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("material", e.target.value)
+                  }
                   className={`w-full p-3 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all appearance-none bg-white ${
-                    errors.material ? "border-red-300 bg-red-50" : "border-slate-200 hover:border-slate-300"
+                    errors.material
+                      ? "border-red-300 bg-red-50"
+                      : "border-slate-200 hover:border-slate-300"
                   }`}
                 >
                   <option value="">Selecione o material</option>
@@ -397,7 +435,9 @@ const TransactionEditModal = ({ transaction, onSave, onCancel }) => {
                       step="0.01"
                       min="0"
                       value={formData.quantidade}
-                      onChange={(e) => handleInputChange("quantidade", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("quantidade", e.target.value)
+                      }
                       className={`w-full p-3 pr-12 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all ${
                         errors.quantidade
                           ? "border-red-300 bg-red-50"
@@ -433,7 +473,9 @@ const TransactionEditModal = ({ transaction, onSave, onCancel }) => {
                       step="0.01"
                       min="0"
                       value={formData.precoUnitario}
-                      onChange={(e) => handleInputChange("precoUnitario", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("precoUnitario", e.target.value)
+                      }
                       className={`w-full p-3 pl-10 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all ${
                         errors.precoUnitario
                           ? "border-red-300 bg-red-50"
@@ -455,13 +497,20 @@ const TransactionEditModal = ({ transaction, onSave, onCancel }) => {
                   <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
                     <Calculator className="h-4 w-4 text-slate-400" />
                     Valor Total
-                    <Badge variant="outline" className="text-[10px] py-0 px-1.5 ml-1">
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] py-0 px-1.5 ml-1"
+                    >
                       Auto
                     </Badge>
                   </label>
-                  <div className={`p-3 rounded-xl ${currentStyle.bg} ${currentStyle.border} border-2`}>
+                  <div
+                    className={`p-3 rounded-xl ${currentStyle.bg} ${currentStyle.border} border-2`}
+                  >
                     <p className={`text-xl font-bold ${currentStyle.text}`}>
-                      {formatCurrency(Number.parseFloat(formData.valorTotal) || 0)}
+                      {formatCurrency(
+                        Number.parseFloat(formData.valorTotal) || 0,
+                      )}
                     </p>
                   </div>
                 </div>
@@ -483,7 +532,9 @@ const TransactionEditModal = ({ transaction, onSave, onCancel }) => {
                     step="0.01"
                     min="0"
                     value={formData.valorTotal}
-                    onChange={(e) => handleInputChange("valorTotal", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("valorTotal", e.target.value)
+                    }
                     className={`w-full p-3 pl-10 text-lg font-semibold border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all ${
                       errors.valorTotal
                         ? "border-red-300 bg-red-50"
@@ -506,7 +557,10 @@ const TransactionEditModal = ({ transaction, onSave, onCancel }) => {
               <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
                 <Users className="h-4 w-4 text-slate-400" />
                 Pessoa / Vendedor / Cliente
-                <Badge variant="outline" className="text-[10px] py-0 px-1.5 ml-1">
+                <Badge
+                  variant="outline"
+                  className="text-[10px] py-0 px-1.5 ml-1"
+                >
                   Opcional
                 </Badge>
               </label>
@@ -528,17 +582,34 @@ const TransactionEditModal = ({ transaction, onSave, onCancel }) => {
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { value: "dinheiro", label: "Dinheiro", icon: Banknote, color: "green" },
-                    { value: "pix", label: "PIX", icon: Smartphone, color: "purple" },
-                    { value: "pagamento_divida", label: "Dívida", icon: Receipt, color: "orange" },
+                    {
+                      value: "dinheiro",
+                      label: "Dinheiro",
+                      icon: Banknote,
+                      color: "green",
+                    },
+                    {
+                      value: "pix",
+                      label: "PIX",
+                      icon: Smartphone,
+                      color: "purple",
+                    },
+                    {
+                      value: "pagamento_divida",
+                      label: "Dívida",
+                      icon: Receipt,
+                      color: "orange",
+                    },
                   ].map((method) => {
-                    const Icon = method.icon
-                    const isActive = formData.formaPagamento === method.value
+                    const Icon = method.icon;
+                    const isActive = formData.formaPagamento === method.value;
                     return (
                       <button
                         key={method.value}
                         type="button"
-                        onClick={() => handleInputChange("formaPagamento", method.value)}
+                        onClick={() =>
+                          handleInputChange("formaPagamento", method.value)
+                        }
                         className={`p-3 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-1 ${
                           isActive
                             ? `bg-${method.color}-50 border-${method.color}-300 text-${method.color}-700 shadow-md`
@@ -546,9 +617,11 @@ const TransactionEditModal = ({ transaction, onSave, onCancel }) => {
                         }`}
                       >
                         <Icon className="h-5 w-5" />
-                        <span className="text-xs font-semibold">{method.label}</span>
+                        <span className="text-xs font-semibold">
+                          {method.label}
+                        </span>
                       </button>
-                    )
+                    );
                   })}
                 </div>
               </div>
@@ -563,7 +636,9 @@ const TransactionEditModal = ({ transaction, onSave, onCancel }) => {
                   <input
                     type="text"
                     value={formData.numeroTransacao}
-                    onChange={(e) => handleInputChange("numeroTransacao", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("numeroTransacao", e.target.value)
+                    }
                     className="w-full p-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all bg-white hover:border-slate-300"
                     placeholder="Código de identificação do PIX"
                   />
@@ -576,13 +651,18 @@ const TransactionEditModal = ({ transaction, onSave, onCancel }) => {
               <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
                 <FileText className="h-4 w-4 text-slate-400" />
                 Observações
-                <Badge variant="outline" className="text-[10px] py-0 px-1.5 ml-1">
+                <Badge
+                  variant="outline"
+                  className="text-[10px] py-0 px-1.5 ml-1"
+                >
                   Opcional
                 </Badge>
               </label>
               <textarea
                 value={formData.observacoes}
-                onChange={(e) => handleInputChange("observacoes", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("observacoes", e.target.value)
+                }
                 rows={3}
                 className="w-full p-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all bg-white hover:border-slate-300 resize-none"
                 placeholder="Adicione observações ou detalhes adicionais sobre a transação..."
@@ -626,7 +706,7 @@ const TransactionEditModal = ({ transaction, onSave, onCancel }) => {
         </form>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default TransactionEditModal
+export default TransactionEditModal;

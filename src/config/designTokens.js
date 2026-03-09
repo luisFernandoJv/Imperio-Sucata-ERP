@@ -112,7 +112,15 @@ export const designTokens = {
 
   typography: {
     fontFamily: {
-      sans: ["Inter", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
+      sans: [
+        "Inter",
+        "system-ui",
+        "-apple-system",
+        "BlinkMacSystemFont",
+        "Segoe UI",
+        "Roboto",
+        "sans-serif",
+      ],
       mono: ["Fira Code", "Consolas", "Monaco", "Courier New", "monospace"],
     },
     fontSize: {
@@ -152,15 +160,31 @@ export const designTokens = {
     popover: 1060,
     tooltip: 1070,
   },
-}
+};
 
 // Material types configuration
 export const materialTypes = [
   // Metais Ferrosos
-  { key: "ferro", name: "Ferro", category: "ferrosos", color: "gray", icon: "⚙️", minStock: 100, density: "high" },
-  { key: "chapa", name: "Chapa", category: "ferrosos", color: "gray", icon: "🔲", minStock: 50, density: "high" },
   {
-    key: "perfil_pintado",
+    key: "ferro",
+    name: "Ferro",
+    category: "ferrosos",
+    color: "gray",
+    icon: "⚙️",
+    minStock: 100,
+    density: "high",
+  },
+  {
+    key: "chapa",
+    name: "Chapa",
+    category: "ferrosos",
+    color: "gray",
+    icon: "🔲",
+    minStock: 50,
+    density: "high",
+  },
+  {
+    key: "perfil pintado",
     name: "Perfil pintado",
     category: "ferrosos",
     color: "gray",
@@ -169,7 +193,7 @@ export const materialTypes = [
     density: "medium",
   },
   {
-    key: "perfil_natural",
+    key: "perfil natural",
     name: "Perfil natural",
     category: "ferrosos",
     color: "gray",
@@ -177,8 +201,24 @@ export const materialTypes = [
     minStock: 30,
     density: "medium",
   },
-  { key: "bloco", name: "Bloco", category: "ferrosos", color: "gray", icon: "🧱", minStock: 20, density: "high" },
-  { key: "bloco2", name: "Bloco 2°", category: "ferrosos", color: "gray", icon: "🔳", minStock: 15, density: "medium" },
+  {
+    key: "bloco",
+    name: "Bloco",
+    category: "ferrosos",
+    color: "gray",
+    icon: "🧱",
+    minStock: 20,
+    density: "high",
+  },
+  {
+    key: "bloco2",
+    name: "Bloco 2°",
+    category: "ferrosos",
+    color: "gray",
+    icon: "🔳",
+    minStock: 15,
+    density: "medium",
+  },
   {
     key: "rad_chapa",
     name: "Rad. Chapa",
@@ -199,7 +239,15 @@ export const materialTypes = [
     minStock: 80,
     density: "high",
   },
-  { key: "cobre", name: "Cobre", category: "nao-ferrosos", color: "orange", icon: "🔶", minStock: 50, density: "high" },
+  {
+    key: "cobre",
+    name: "Cobre",
+    category: "nao-ferrosos",
+    color: "orange",
+    icon: "🔶",
+    minStock: 50,
+    density: "high",
+  },
   {
     key: "bronze",
     name: "Bronze",
@@ -254,7 +302,15 @@ export const materialTypes = [
     minStock: 200,
     density: "low",
   },
-  { key: "inox", name: "Inox", category: "nao-ferrosos", color: "silver", icon: "✨", minStock: 30, density: "high" },
+  {
+    key: "inox",
+    name: "Inox",
+    category: "nao-ferrosos",
+    color: "silver",
+    icon: "✨",
+    minStock: 30,
+    density: "high",
+  },
   {
     key: "antimonio",
     name: "Antimônio",
@@ -266,8 +322,24 @@ export const materialTypes = [
   },
 
   // Cabos e Fios
-  { key: "cabo_ai", name: "Cabo AI", category: "cabos", color: "yellow", icon: "🔌", minStock: 40, density: "medium" },
-  { key: "tela", name: "Tela", category: "cabos", color: "yellow", icon: "🕸️", minStock: 50, density: "low" },
+  {
+    key: "cabo_ai",
+    name: "Cabo AI",
+    category: "cabos",
+    color: "yellow",
+    icon: "🔌",
+    minStock: 40,
+    density: "medium",
+  },
+  {
+    key: "tela",
+    name: "Tela",
+    category: "cabos",
+    color: "yellow",
+    icon: "🕸️",
+    minStock: 50,
+    density: "low",
+  },
 
   // Tubos e Estruturas
   {
@@ -281,9 +353,33 @@ export const materialTypes = [
   },
 
   // Outros Materiais
-  { key: "panela", name: "Panela", category: "outros", color: "yellow", icon: "🍳", minStock: 25, density: "medium" },
-  { key: "metal", name: "Metal", category: "outros", color: "purple", icon: "🔩", minStock: 60, density: "high" },
-  { key: "bateria", name: "Bateria", category: "eletronicos", color: "red", icon: "🔋", minStock: 40, density: "high" },
+  {
+    key: "panela",
+    name: "Panela",
+    category: "outros",
+    color: "yellow",
+    icon: "🍳",
+    minStock: 25,
+    density: "medium",
+  },
+  {
+    key: "metal",
+    name: "Metal",
+    category: "outros",
+    color: "purple",
+    icon: "🔩",
+    minStock: 60,
+    density: "high",
+  },
+  {
+    key: "bateria",
+    name: "Bateria",
+    category: "eletronicos",
+    color: "red",
+    icon: "🔋",
+    minStock: 40,
+    density: "high",
+  },
   {
     key: "motor_gel",
     name: "Motor Gel",
@@ -293,8 +389,24 @@ export const materialTypes = [
     minStock: 10,
     density: "high",
   },
-  { key: "roda", name: "Roda", category: "automotivo", color: "black", icon: "🛞", minStock: 15, density: "high" },
-  { key: "papelao", name: "Papelão", category: "papel", color: "brown", icon: "📦", minStock: 100, density: "low" },
+  {
+    key: "roda",
+    name: "Roda",
+    category: "automotivo",
+    color: "black",
+    icon: "🛞",
+    minStock: 15,
+    density: "high",
+  },
+  {
+    key: "papelao",
+    name: "Papelão",
+    category: "papel",
+    color: "brown",
+    icon: "📦",
+    minStock: 100,
+    density: "low",
+  },
   {
     key: "papel_branco",
     name: "Papel branco",
@@ -304,7 +416,7 @@ export const materialTypes = [
     minStock: 80,
     density: "low",
   },
-]
+];
 
 export const categories = [
   { key: "todos", name: "Todos os Materiais", icon: "📋" },
@@ -316,4 +428,4 @@ export const categories = [
   { key: "automotivo", name: "Automotivo", icon: "🛞" },
   { key: "papel", name: "Papel", icon: "📦" },
   { key: "outros", name: "Outros", icon: "📦" },
-]
+];
