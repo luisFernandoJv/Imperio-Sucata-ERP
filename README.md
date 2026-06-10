@@ -1,213 +1,117 @@
-# 🏭 Império Sucata - Sistema de Gestão
+<div align="center">
 
-Sistema completo de gestão para ferro-velho com controle de estoque, transações, relatórios e análises financeiras.
+# 🏭 Império Sucata — Sistema de Gestão
 
-## 📋 Estrutura do Projeto
+**Sistema completo para gestão de ferro-velho com controle de estoque, transações, relatórios e análises financeiras em tempo real.**
 
-\`\`\`
-imperiosucata/
-├── functions/              # Firebase Cloud Functions
-│   ├── index.js           # Funções serverless
-│   ├── package.json       # Dependências das functions
-│   └── .eslintrc.js       # Configuração ESLint
-│
-├── sistema/               # Aplicação React
-│   ├── src/
-│   │   ├── components/    # Componentes React
-│   │   ├── contexts/      # Context API
-│   │   ├── lib/          # Bibliotecas e utilitários
-│   │   ├── pages/        # Páginas da aplicação
-│   │   └── utils/        # Funções utilitárias
-│   ├── public/           # Arquivos estáticos
-│   └── package.json      # Dependências do frontend
-│
-├── firebase.json         # Configuração Firebase
-├── firestore.rules       # Regras de segurança Firestore
-└── firestore.indexes.json # Índices do Firestore
-\`\`\`
+[![React](https://img.shields.io/badge/React-19.1.0-61DAFB?style=flat-square&logo=react)](https://react.dev/)
+[![Firebase](https://img.shields.io/badge/Firebase-12.4.0-FFCA28?style=flat-square&logo=firebase)](https://firebase.google.com/)
+[![Vite](https://img.shields.io/badge/Vite-7.1.9-646CFF?style=flat-square&logo=vite)](https://vitejs.dev/)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind-4.1.9-06B6D4?style=flat-square&logo=tailwindcss)](https://tailwindcss.com/)
+[![License](https://img.shields.io/badge/Licença-Privada-red?style=flat-square)](./LICENSE)
 
-## 🚀 Funcionalidades
+</div>
+
+---
+
+## 📌 Visão Geral
+
+O **Império Sucata** é uma plataforma web desenvolvida para modernizar e automatizar a gestão operacional e financeira de ferro-velhos. Integra controle de estoque, registro de transações, relatórios detalhados e um dashboard analítico em uma única interface responsiva e intuitiva.
+
+---
+
+## ✨ Funcionalidades
 
 ### 📊 Dashboard
-- Visão geral de vendas, compras e lucros
-- Gráficos de tendências e análises
-- KPIs em tempo real
-- Top 5 materiais mais lucrativos
 
-### 💰 Transações
+- KPIs financeiros em tempo real (vendas, compras, lucros)
+- Gráficos de tendências e desempenho
+- Top 5 materiais mais lucrativos
+- Visão consolidada do negócio
+
+### 💰 Gestão de Transações
+
 - Registro de compras, vendas e despesas
 - Cálculo automático de valores
-- Histórico completo de transações
-- Impressão de comandas/recibos
+- Suporte a múltiplas formas de pagamento
+- Impressão de comandas e recibos
+- Histórico completo de movimentações
 
-### 📦 Inventário
-- Controle de estoque em tempo real
-- Alertas de estoque baixo
-- Análise de margem de lucro
+### 📦 Controle de Inventário
+
+- Atualização de estoque em tempo real via Cloud Functions
+- Alertas automáticos de estoque baixo
+- Análise de margem de lucro por material
 - Filtros e ordenação inteligente
 
-### 📈 Relatórios
+### 📈 Relatórios e Análises
+
 - Relatórios diários, semanais e mensais
 - Exportação em PDF e Excel
-- Análise por material
-- Análise por forma de pagamento
+- Análise por material e por forma de pagamento
+- Relatórios por período personalizado
 
-## 🛠️ Tecnologias
+---
+
+## 🛠️ Stack Tecnológica
 
 ### Frontend
-- **React** 19.1.0 - Biblioteca UI
-- **Vite** 7.1.9 - Build tool
-- **React Router** 7.9.4 - Roteamento
-- **Tailwind CSS** 4.1.9 - Estilização
-- **Recharts** 2.15.4 - Gráficos
-- **Framer Motion** 12.23.24 - Animações
-- **React Hook Form** 7.60.0 - Formulários
-- **Zod** 3.25.76 - Validação
 
-### Backend
-- **Firebase** 12.4.0
-  - Authentication
-  - Firestore Database
-  - Cloud Functions
-  - Storage
-- **Node.js** 18
+| Tecnologia      | Versão   | Finalidade                   |
+| --------------- | -------- | ---------------------------- |
+| React           | 19.1.0   | Interface de usuário         |
+| Vite            | 7.1.9    | Build e dev server           |
+| React Router    | 7.9.4    | Roteamento SPA               |
+| Tailwind CSS    | 4.1.9    | Estilização                  |
+| Recharts        | 2.15.4   | Gráficos e visualizações     |
+| Framer Motion   | 12.23.24 | Animações                    |
+| React Hook Form | 7.60.0   | Gerenciamento de formulários |
+| Zod             | 3.25.76  | Validação de schemas         |
 
-### Cloud Functions
-- **jsPDF** - Geração de PDFs
-- **XLSX** - Geração de Excel
-- **Firebase Admin SDK** - Operações serverless
+### Backend & Infraestrutura
 
-## 📦 Instalação
+| Tecnologia                   | Finalidade                |
+| ---------------------------- | ------------------------- |
+| Firebase Authentication      | Autenticação de usuários  |
+| Cloud Firestore              | Banco de dados NoSQL      |
+| Cloud Functions (Node.js 18) | Lógica serverless         |
+| Firebase Storage             | Armazenamento de arquivos |
+| jsPDF                        | Geração de relatórios PDF |
+| XLSX                         | Exportação para Excel     |
 
-### Pré-requisitos
-- Node.js 18 ou superior
-- npm ou yarn
-- Firebase CLI
+---
 
-### 1. Clone o repositório
-\`\`\`bash
-git clone <repository-url>
-cd imperiosucata
-\`\`\`
+## 📁 Estrutura do Projeto
 
-### 2. Instale as dependências do frontend
-\`\`\`bash
-cd sistema
-npm install
-\`\`\`
+```
+imperiosucata/
+├── functions/                  # Firebase Cloud Functions
+│   ├── index.js                # Funções serverless
+│   ├── package.json
+│   └── .eslintrc.js
+│
+├── sistema/                    # Aplicação React (frontend)
+│   ├── src/
+│   │   ├── components/         # Componentes reutilizáveis
+│   │   ├── contexts/           # Context API (estado global)
+│   │   ├── lib/                # Bibliotecas e configurações
+│   │   ├── pages/              # Páginas da aplicação
+│   │   └── utils/              # Funções utilitárias
+│   ├── public/
+│   └── package.json
+│
+├── firebase.json               # Configuração Firebase
+├── firestore.rules             # Regras de segurança
+└── firestore.indexes.json      # Índices do Firestore
+```
 
-### 3. Instale as dependências das Cloud Functions
-\`\`\`bash
-cd ../functions
-npm install
-\`\`\`
+---
 
-### 4. Configure o Firebase
-\`\`\`bash
-# Faça login no Firebase
-firebase login
+## 🗃️ Modelo de Dados (Firestore)
 
-# Inicialize o projeto (se necessário)
-firebase init
-\`\`\`
+### `transactions`
 
-### 5. Configure as variáveis de ambiente
-Crie um arquivo `.env` na pasta `sistema/` com suas credenciais do Firebase:
-
-\`\`\`env
-VITE_FIREBASE_API_KEY=sua_api_key
-VITE_FIREBASE_AUTH_DOMAIN=seu_auth_domain
-VITE_FIREBASE_PROJECT_ID=seu_project_id
-VITE_FIREBASE_STORAGE_BUCKET=seu_storage_bucket
-VITE_FIREBASE_MESSAGING_SENDER_ID=seu_sender_id
-VITE_FIREBASE_APP_ID=seu_app_id
-\`\`\`
-
-## 🚀 Executando o Projeto
-
-### Desenvolvimento Local
-
-#### Frontend
-\`\`\`bash
-cd sistema
-npm run dev
-\`\`\`
-Acesse: http://localhost:5173
-
-#### Cloud Functions (Emulador)
-\`\`\`bash
-cd functions
-npm run serve
-\`\`\`
-
-#### Firebase Emulators (Completo)
-\`\`\`bash
-firebase emulators:start
-\`\`\`
-
-### Build de Produção
-
-#### Frontend
-\`\`\`bash
-cd sistema
-npm run build
-\`\`\`
-
-#### Deploy Firebase
-\`\`\`bash
-# Deploy completo
-firebase deploy
-
-# Deploy apenas functions
-firebase deploy --only functions
-
-# Deploy apenas hosting
-firebase deploy --only hosting
-
-# Deploy apenas firestore rules
-firebase deploy --only firestore:rules
-\`\`\`
-
-## 📱 Funcionalidades Principais
-
-### 1. Gestão de Transações
-- ✅ Registro de compras de materiais
-- ✅ Registro de vendas
-- ✅ Controle de despesas
-- ✅ Múltiplas formas de pagamento
-- ✅ Impressão de comandas
-
-### 2. Controle de Estoque
-- ✅ Atualização automática via Cloud Functions
-- ✅ Alertas de estoque baixo
-- ✅ Análise de margem de lucro por material
-- ✅ Histórico de movimentações
-
-### 3. Relatórios e Análises
-- ✅ Dashboard com KPIs em tempo real
-- ✅ Gráficos de tendências
-- ✅ Relatórios diários automáticos
-- ✅ Exportação em PDF e Excel
-- ✅ Análise por período customizado
-
-### 4. Integrações
-- ✅ Tawk.to - Chat ao vivo
-- ✅ Firebase Authentication
-- ✅ Cloud Storage para arquivos
-
-## 🔒 Segurança
-
-- Autenticação via Firebase Auth
-- Regras de segurança Firestore configuradas
-- Validação de dados no frontend e backend
-- HTTPS obrigatório em produção
-
-## 📊 Estrutura do Banco de Dados
-
-### Collections Principais
-
-#### `transactions`
-\`\`\`javascript
+```js
 {
   id: string,
   tipo: 'compra' | 'venda' | 'despesa',
@@ -220,19 +124,21 @@ firebase deploy --only firestore:rules
   data: Timestamp,
   observacoes: string
 }
-\`\`\`
+```
 
-#### `inventory/current`
-\`\`\`javascript
+### `inventory/current`
+
+```js
 {
   [material]: {
     quantidade: number
   }
 }
-\`\`\`
+```
 
-#### `daily_reports/{date}`
-\`\`\`javascript
+### `daily_reports/{date}`
+
+```js
 {
   date: Timestamp,
   dateString: string,
@@ -243,24 +149,107 @@ firebase deploy --only firestore:rules
   materialStats: {},
   paymentStats: {}
 }
-\`\`\`
-
-## 🤝 Contribuindo
-
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
-
-## 📝 Licença
-
-Este projeto é privado e proprietário.
-
-## 👥 Suporte
-
-Para suporte, entre em contato através do chat Tawk.to integrado no sistema.
+```
 
 ---
 
-**Desenvolvido com ❤️ para Império Sucata**
+## 🚀 Instalação e Configuração
+
+### Pré-requisitos
+
+- Node.js 18+
+- npm ou yarn
+- Firebase CLI (`npm install -g firebase-tools`)
+
+### 1. Clone o repositório
+
+```bash
+git clone <repository-url>
+cd imperiosucata
+```
+
+### 2. Instale as dependências
+
+```bash
+# Frontend
+cd sistema && npm install
+
+# Cloud Functions
+cd ../functions && npm install
+```
+
+### 3. Configure as variáveis de ambiente
+
+Crie o arquivo `.env` dentro da pasta `sistema/`:
+
+```env
+VITE_FIREBASE_API_KEY=sua_api_key
+VITE_FIREBASE_AUTH_DOMAIN=seu_auth_domain
+VITE_FIREBASE_PROJECT_ID=seu_project_id
+VITE_FIREBASE_STORAGE_BUCKET=seu_storage_bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=seu_sender_id
+VITE_FIREBASE_APP_ID=seu_app_id
+```
+
+### 4. Autentique no Firebase
+
+```bash
+firebase login
+```
+
+---
+
+## ▶️ Executando o Projeto
+
+### Desenvolvimento Local
+
+```bash
+# Iniciar o frontend
+cd sistema
+npm run dev
+# Acesse: http://localhost:5173
+
+# Iniciar emuladores Firebase (completo)
+firebase emulators:start
+```
+
+### Build de Produção
+
+```bash
+cd sistema
+npm run build
+```
+
+### Deploy
+
+```bash
+firebase deploy                        # Deploy completo
+firebase deploy --only functions       # Apenas Cloud Functions
+firebase deploy --only hosting         # Apenas frontend
+firebase deploy --only firestore:rules # Apenas regras de segurança
+```
+
+---
+
+## 🔒 Segurança
+
+- Autenticação gerenciada pelo Firebase Auth
+- Regras de segurança granulares no Firestore
+- Validação de dados aplicada no frontend (Zod) e no backend (Cloud Functions)
+- HTTPS obrigatório em ambiente de produção
+
+---
+
+## 📄 Licença
+
+Este projeto é **privado e proprietário**. Todos os direitos reservados.  
+Uso, cópia ou distribuição sem autorização expressa são proibidos.
+
+---
+
+## 👤 Autor
+
+Desenvolvido por **Luis Fernando**
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-luisfernando--eng-0A66C2?style=flat-square&logo=linkedin)](https://www.linkedin.com/in/luisfernando-eng)
+[![Email](https://img.shields.io/badge/Email-luisfernando--engcp%40gmail.com-D14836?style=flat-square&logo=gmail)](mailto:luisfernando-engcp@gmail.com)
