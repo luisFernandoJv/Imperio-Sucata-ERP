@@ -65,6 +65,38 @@ const formatCurrency = (value) =>
     value || 0,
   );
 
+/* Converte um objeto Date para "yyyy-MM-dd" usando os componentes
+   LOCAIS (getFullYear/getMonth/getDate), evitando o bug clássico de
+   toISOString() que converte para UTC e pode "voltar" um dia em
+   fusos negativos (ex: Brasil, UTC-3). */
+const formatDateForInput = (date) => {
+  const d = date instanceof Date ? date : new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+/* Recebe o valor "yyyy-MM-dd" do <input type="date"> e monta um Date
+   usando o construtor (ano, mês, dia, ...) — que o JS sempre interpreta
+   em horário LOCAL, ao contrário de new Date("yyyy-MM-dd") que é
+   interpretado como UTC meia-noite e "volta" um dia em fusos negativos.
+   Preserva o horário atual (hora/min/seg) para registrar o momento real
+   do lançamento, em vez de fixar sempre meio-dia. */
+const parseDateInputPreservingTime = (value, previousDate) => {
+  const [year, month, day] = value.split("-").map(Number);
+  const base = previousDate instanceof Date ? previousDate : new Date();
+  return new Date(
+    year,
+    month - 1,
+    day,
+    base.getHours(),
+    base.getMinutes(),
+    base.getSeconds(),
+    base.getMilliseconds(),
+  );
+};
+
 /* ── Dados estáticos ─────────────────────────────────────── */
 const CATEGORIAS = [
   { value: "operacional", label: "Operacional", icon: "⚙️" },
@@ -217,7 +249,6 @@ const ExpenseForm = ({ onSuccess }) => {
       setSaving(true);
       const transactionDate =
         formData.data instanceof Date ? formData.data : new Date(formData.data);
-      transactionDate.setHours(12, 0, 0, 0);
       const expense = {
         ...formData,
         valor,
@@ -770,13 +801,15 @@ const ExpenseForm = ({ onSuccess }) => {
                   <Input
                     id="data"
                     type="date"
-                    value={
-                      formData.data instanceof Date
-                        ? formData.data.toISOString().split("T")[0]
-                        : formData.data
-                    }
+                    value={formatDateForInput(formData.data)}
                     onChange={(e) =>
-                      handleInputChange("data", new Date(e.target.value))
+                      handleInputChange(
+                        "data",
+                        parseDateInputPreservingTime(
+                          e.target.value,
+                          formData.data,
+                        ),
+                      )
                     }
                     className="h-10 font-medium text-gray-700 cursor-pointer"
                   />
