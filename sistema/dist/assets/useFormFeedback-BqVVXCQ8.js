@@ -1,0 +1,1 @@
+import{r as e}from"./vendor-DmeOuXdA.js";function s(){const[s,a]=e.useState(null);return{toast:e.useCallback(e=>a({...e,key:Date.now()}),[]),feedback:s,dismiss:e.useCallback(()=>a(null),[])}}export{s as u};

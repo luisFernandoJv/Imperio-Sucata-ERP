@@ -1,0 +1,78 @@
+/* Etapa 1: estilos limitados à estrutura, sem redefinir os módulos. */
+.app-shell { min-height: 100vh; min-height: 100dvh; background: #f5f7fa; color: #0f172a; }
+.shell-sidebar, .shell-drawer { background: #172334; color: #e2e8f0; display: flex; flex-direction: column; }
+.shell-sidebar { display: none; }
+.shell-brand { display: flex; align-items: center; gap: 12px; min-height: 76px; padding: 18px 24px; text-align: left; width: 100%; border-bottom: 1px solid #334155; }
+.shell-brand strong { display: block; color: #fff; font-size: 1rem; font-weight: 700; letter-spacing: -.025em; }
+.shell-brand small { display: block; color: #b4c0d0; font-size: .75rem; margin-top: 2px; }
+.shell-nav { flex: 1; padding: 24px 14px; overflow-y: auto; }
+.shell-nav-group + .shell-nav-group { margin-top: 24px; }
+.shell-nav-label { color: #b4c0d0; font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; margin: 0 12px 8px; }
+.shell-nav ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.shell-nav-item { width: 100%; min-height: 46px; border-radius: 8px; display: flex; align-items: center; gap: 12px; padding: 11px 12px; color: #d4deeb; text-align: left; font-size: .875rem; font-weight: 500; line-height: 1.5; transition: background-color .15s, color .15s; }
+.shell-nav-item svg { flex-shrink: 0; }
+.shell-nav-item:hover { background: #25354b; color: #fff; }
+.shell-nav-item[aria-current="page"] { background: #fff2e7; color: #9a3412; box-shadow: inset 3px 0 #ea580c; font-weight: 650; }
+.shell-active-arrow { margin-left: auto; }
+.shell-sidebar-footer { border-top: 1px solid #334155; padding: 14px; }
+.shell-logout { margin-top: 4px; }
+.shell-logout:hover { color: #fecaca; background: #412b36; }
+.shell-workspace { min-width: 0; }
+.shell-topbar { position: sticky; top: 0; z-index: 40; min-height: 76px; background: #fff; border-bottom: 1px solid #e2e8f0; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.shell-topbar-context { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.shell-context-copy { min-width: 0; }
+.shell-context-copy > span { font-size: .6875rem; color: #64748b; }
+.shell-context-copy > span > span { margin: 0 6px; color: #64748b; }
+.shell-context-copy p { margin: 1px 0 0; font-size: 1rem; font-weight: 650; color: #0f172a; }
+.shell-icon-button { width: 44px; height: 44px; flex-shrink: 0; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; }
+.shell-topbar .shell-icon-button { color: #475569; border: 1px solid #cbd5e1; }
+.shell-topbar .shell-icon-button:hover { background: #f1f5f9; }
+.shell-calculator-button { display: inline-flex; gap: 8px; justify-content: center; align-items: center; min-width: 44px; min-height: 44px; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; color: #334155; font-size: .8125rem; font-weight: 600; background: #fff; }
+.shell-calculator-button:hover { background: #f8fafc; border-color: #94a3b8; }
+.shell-main { padding: 24px 24px 104px; scroll-margin-top: 90px; }
+.shell-content { max-width: 1280px; margin: 0 auto; min-width: 0; }
+.shell-main:focus { outline: none; }
+.shell-main:focus-visible { outline: 2px solid #2563eb; outline-offset: -4px; }
+.app-shell button:focus-visible, .shell-drawer button:focus-visible, .shell-breadcrumbs button:focus-visible { outline: 3px solid #60a5fa; outline-offset: 3px; }
+.shell-skip-link { position: fixed; top: 8px; left: 16px; padding: 12px 20px; z-index: 120; background: #fff; color: #0f172a; border: 2px solid #2563eb; border-radius: 8px; transform: translateY(-160%); }
+.shell-skip-link:focus { transform: translateY(0); }
+.shell-drawer-overlay { position: fixed; inset: 0; z-index: 90; background: rgb(15 23 42 / .55); }
+.shell-drawer { position: fixed; inset: 0 auto 0 0; z-index: 91; width: min(320px, calc(100vw - 24px)); height: 100vh; height: 100dvh; box-shadow: 20px 0 60px rgb(0 0 0 / .2); }
+.shell-drawer-heading { display: flex; align-items: center; border-bottom: 1px solid #334155; padding-right: 8px; }
+.shell-drawer-heading .shell-brand { border: 0; padding-left: 18px; padding-right: 8px; min-width: 0; }
+.shell-drawer-heading .shell-icon-button:hover { background: #334155; }
+.shell-drawer .shell-nav { min-height: 0; }
+.shell-drawer .shell-sidebar-footer { padding-bottom: max(14px, env(safe-area-inset-bottom)); }
+.shell-breadcrumbs { margin-bottom: 20px; color: #64748b; font-size: .8125rem; }
+.shell-breadcrumbs ol { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.shell-breadcrumbs li { display: flex; align-items: center; gap: 8px; }
+.shell-breadcrumbs button { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; border-radius: 4px; }
+.shell-breadcrumbs button:hover { color: #9a3412; }
+.shell-breadcrumbs [aria-current="page"] { color: #334155; font-weight: 600; }
+@media (max-width: 639px) {
+  .shell-topbar { padding: 10px 16px; min-height: 72px; }
+  .shell-main { padding: 16px 16px 104px; }
+  .shell-calculator-button { padding: 10px; }
+  .shell-calculator-button span { display: none; }
+  .shell-breadcrumbs { margin-bottom: 12px; }
+}
+@media (min-width: 1280px) {
+  .shell-sidebar { display: flex; position: fixed; inset: 0 auto 0 0; width: 248px; height: 100vh; height: 100dvh; z-index: 45; }
+  .shell-workspace { margin-left: 248px; }
+  .shell-menu-trigger { display: none; }
+  .shell-topbar { padding-right: 32px; padding-left: 32px; }
+  .shell-main { padding: 24px 32px 104px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .shell-drawer { animation: shell-drawer-in .18s ease-out; }
+  .shell-drawer-overlay { animation: shell-overlay-in .18s ease-out; }
+  @keyframes shell-drawer-in { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+  @keyframes shell-overlay-in { from { opacity: 0; } to { opacity: 1; } }
+}
+@media print {
+  .app-shell { min-height: 0; background: #fff; }
+  .shell-sidebar, .shell-topbar, .shell-drawer, .shell-drawer-overlay, .shell-skip-link { display: none !important; }
+  .shell-workspace { margin: 0; }
+  .shell-main { padding: 0; }
+  .shell-content { max-width: none; }
+}

@@ -1,48 +1,19 @@
-"use client";
+import { useState, useEffect, useRef } from "react";
+import * as Dialog from "@radix-ui/react-dialog";
+import { CalculatorIcon, X, Delete, History, Copy, Check } from "lucide-react";
 
-import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  CalculatorIcon,
-  X,
-  Delete,
-  History,
-  Copy,
-  Check,
-  RotateCcw,
-} from "lucide-react";
-
-const Button = ({ children, onClick, className = "", variant = "default" }) => {
-  const baseClasses =
-    "h-12 rounded-lg font-medium transition-all duration-200 flex items-center justify-center text-lg shadow-sm hover:shadow-md active:scale-95";
-  const variants = {
-    default:
-      "bg-gray-100 hover:bg-gray-200 text-gray-800 active:bg-gray-300 border border-gray-200",
-    operator:
-      "bg-blue-500 hover:bg-blue-600 text-white active:bg-blue-700 shadow-blue-200",
-    equals:
-      "bg-green-500 hover:bg-green-600 text-white active:bg-green-700 shadow-green-200",
-    clear:
-      "bg-red-500 hover:bg-red-600 text-white active:bg-red-700 shadow-red-200",
-    memory:
-      "bg-purple-500 hover:bg-purple-600 text-white active:bg-purple-700 shadow-purple-200",
-    function:
-      "bg-gray-200 hover:bg-gray-300 text-gray-700 active:bg-gray-400 border border-gray-300",
-  };
-
+function Button({ children, variant = "default", className = "", ...props }) {
   return (
-    <motion.button
-      whileTap={{ scale: 0.95 }}
-      whileHover={{ scale: 1.02 }}
-      onClick={onClick}
-      className={`${baseClasses} ${variants[variant]} ${className}`}
+    <button
+      type="button"
+      className={`calculator-key calculator-key-${variant} ${className}`}
+      {...props}
     >
       {children}
-    </motion.button>
+    </button>
   );
-};
-
-const Calculator = ({ isOpen, onClose }) => {
+}
+export default function Calculator({ isOpen, onClose, onReturnFocus }) {
   const [display, setDisplay] = useState("0");
   const [previousValue, setPreviousValue] = useState(null);
   const [operation, setOperation] = useState(null);
@@ -51,64 +22,55 @@ const Calculator = ({ isOpen, onClose }) => {
   const [history, setHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [copied, setCopied] = useState(false);
-
-  // Sincronizar com teclado
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (!isOpen) return;
-
-      if (/[0-9]/.test(e.key)) inputNumber(parseInt(e.key));
-      else if (e.key === ".") inputDecimal();
-      else if (e.key === "+") performOperation("+");
-      else if (e.key === "-") performOperation("-");
-      else if (e.key === "*") performOperation("×");
-      else if (e.key === "/") performOperation("÷");
-      else if (e.key === "Enter" || e.key === "=") handleEquals();
-      else if (e.key === "Escape") onClose();
-      else if (e.key === "Backspace") backspace();
-      else if (e.key === "c" || e.key === "C") clear();
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, display, previousValue, operation, waitingForOperand]);
-
-  const inputNumber = (num) => {
-    if (waitingForOperand) {
-      setDisplay(String(num));
-      setWaitingForOperand(false);
-    } else {
-      setDisplay(display === "0" ? String(num) : display + num);
-    }
+  const [copyMessage, setCopyMessage] = useState("");
+  const copyTimer = useRef(null);
+  const resultRef = useRef(null);
+  useEffect(() => () => clearTimeout(copyTimer.current), []);
+  const invalid = !Number.isFinite(Number(display));
+  const fail = () => {
+    setDisplay("Erro");
+    setPreviousValue(null);
+    setOperation(null);
+    setWaitingForOperand(true);
   };
-
+  const inputNumber = (num) => {
+    const next =
+      waitingForOperand || invalid || display === "0"
+        ? String(num)
+        : display + num;
+    if (!Number.isFinite(Number(next))) {
+      fail();
+      return;
+    }
+    setDisplay(next);
+    setWaitingForOperand(false);
+  };
   const inputDecimal = () => {
-    if (waitingForOperand) {
+    if (waitingForOperand || invalid) {
       setDisplay("0.");
       setWaitingForOperand(false);
-    } else if (display.indexOf(".") === -1) {
-      setDisplay(display + ".");
-    }
+    } else if (!display.includes(".")) setDisplay(display + ".");
   };
-
   const backspace = () => {
+    if (invalid) {
+      clear();
+      return;
+    }
     if (waitingForOperand) return;
-    setDisplay(display.length > 1 ? display.slice(0, -1) : "0");
+    const next = display.length > 1 ? display.slice(0, -1) : "0";
+    setDisplay(next === "-" ? "0" : next);
   };
-
   const clear = () => {
     setDisplay("0");
     setPreviousValue(null);
     setOperation(null);
     setWaitingForOperand(false);
   };
-
   const clearAll = () => {
     clear();
     setMemory(0);
     setHistory([]);
   };
-
   const calculate = (firstValue, secondValue, op) => {
     const f = parseFloat(firstValue);
     const s = parseFloat(secondValue);
@@ -127,287 +89,325 @@ const Calculator = ({ isOpen, onClose }) => {
         return s;
     }
   };
-
+  const addToHistory = (calculation) =>
+    setHistory((prev) => [calculation, ...prev.slice(0, 19)]);
   const performOperation = (nextOperation) => {
+    if (invalid) return;
     const inputValue = parseFloat(display);
-
-    if (previousValue === null) {
-      setPreviousValue(inputValue);
-    } else if (operation && !waitingForOperand) {
+    if (previousValue === null) setPreviousValue(inputValue);
+    else if (operation && !waitingForOperand) {
       const result = calculate(previousValue, inputValue, operation);
-      if (result === "Erro") {
-        setDisplay("Erro");
-        setPreviousValue(null);
-        setOperation(null);
-      } else {
-        setDisplay(String(Number(result.toFixed(8))));
-        setPreviousValue(result);
-        addToHistory(`${previousValue} ${operation} ${inputValue} = ${result}`);
+      if (result === "Erro" || !Number.isFinite(result)) {
+        fail();
+        return;
       }
+      setDisplay(String(Number(result.toFixed(8))));
+      setPreviousValue(result);
+      addToHistory(`${previousValue} ${operation} ${inputValue} = ${result}`);
     }
-
     setWaitingForOperand(true);
     setOperation(nextOperation);
   };
-
   const handleEquals = () => {
-    if (previousValue === null || !operation || waitingForOperand) return;
-
+    if (previousValue === null || !operation || waitingForOperand || invalid)
+      return;
     const inputValue = parseFloat(display);
     const result = calculate(previousValue, inputValue, operation);
-
-    if (result === "Erro") {
-      setDisplay("Erro");
-    } else {
-      const formattedResult = String(Number(result.toFixed(8)));
-      setDisplay(formattedResult);
-      addToHistory(
-        `${previousValue} ${operation} ${inputValue} = ${formattedResult}`,
-      );
+    if (result === "Erro" || !Number.isFinite(result)) {
+      fail();
+      return;
     }
-
+    const formattedResult = String(Number(result.toFixed(8)));
+    setDisplay(formattedResult);
+    addToHistory(
+      `${previousValue} ${operation} ${inputValue} = ${formattedResult}`,
+    );
     setPreviousValue(null);
     setOperation(null);
     setWaitingForOperand(true);
   };
-
-  const addToHistory = (calculation) => {
-    setHistory((prev) => [calculation, ...prev.slice(0, 19)]);
-  };
-
   const copyToClipboard = async () => {
+    clearTimeout(copyTimer.current);
     try {
       await navigator.clipboard.writeText(display);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Erro ao copiar:", err);
+      setCopyMessage("Resultado copiado.");
+      copyTimer.current = setTimeout(() => {
+        setCopied(false);
+        setCopyMessage("");
+      }, 2000);
+    } catch {
+      setCopied(false);
+      setCopyMessage(
+        "Não foi possível copiar. Selecione o resultado e copie manualmente.",
+      );
     }
   };
-
+  const onKeyDown = (event) => {
+    if (
+      event.defaultPrevented ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.altKey ||
+      event.isComposing
+    )
+      return;
+    const key = event.key;
+    let action;
+    if (/^[0-9]$/.test(key)) action = () => inputNumber(Number(key));
+    else if (key === "." || key === ",") action = inputDecimal;
+    else if (["+", "-", "%"].includes(key))
+      action = () => performOperation(key);
+    else if (key === "*") action = () => performOperation("×");
+    else if (key === "/") action = () => performOperation("÷");
+    else if (
+      key === "=" ||
+      (key === "Enter" &&
+        !(event.target instanceof Element && event.target.closest("button")))
+    )
+      action = handleEquals;
+    else if (key === "Backspace") action = backspace;
+    else if (key.toLowerCase() === "c") action = clear;
+    if (action) {
+      event.preventDefault();
+      action();
+    }
+  };
   const formatDisplay = (value) => {
-    if (value === "Erro") return "Erro";
-    if (value.length > 12) {
-      return parseFloat(value).toExponential(6);
-    }
-    return value;
+    if (!Number.isFinite(Number(value))) return "Erro";
+    return value.length > 12 ? parseFloat(value).toExponential(6) : value;
   };
-
-  const formatCurrency = (value) => {
-    if (value === "Erro") return "";
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(parseFloat(value) || 0);
-  };
-
-  if (!isOpen) return null;
-
+  const currency = invalid
+    ? ""
+    : new Intl.NumberFormat("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+      }).format(Number(display) || 0);
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
-      onClick={onClose}
+    <Dialog.Root
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
     >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0, y: 20 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100"
-      >
-        {/* Header */}
-        <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="bg-blue-600 p-2 rounded-lg shadow-lg shadow-blue-200">
-              <CalculatorIcon className="h-5 w-5 text-white" />
+      <Dialog.Portal>
+        <Dialog.Overlay className="utility-overlay" />
+        <Dialog.Content
+          className="utility-dialog calculator-dialog"
+          data-utility="calculator"
+          onKeyDown={onKeyDown}
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            clearTimeout(copyTimer.current);
+            setCopied(false);
+            setCopyMessage("");
+            resultRef.current?.focus();
+          }}
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            onReturnFocus?.();
+          }}
+        >
+          <div className="utility-heading calculator-heading">
+            <div className="calculator-title">
+              <CalculatorIcon size={21} aria-hidden="true" />
+              <Dialog.Title>Calculadora</Dialog.Title>
             </div>
-            <h3 className="text-lg font-bold text-gray-800">Calculadora</h3>
+            <div className="calculator-heading-actions">
+              <button
+                type="button"
+                className="utility-icon-button"
+                aria-label="Mostrar histórico de cálculos"
+                aria-expanded={showHistory}
+                aria-controls="calculator-history"
+                onClick={() => setShowHistory((v) => !v)}
+              >
+                <History size={20} />
+              </button>
+              <Dialog.Close
+                className="utility-icon-button"
+                aria-label="Fechar calculadora"
+              >
+                <X size={20} />
+              </Dialog.Close>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setShowHistory(!showHistory)}
-              className={`p-2 rounded-full transition-colors ${showHistory ? "bg-blue-100 text-blue-600" : "hover:bg-gray-200 text-gray-500"}`}
-              title="Histórico"
-            >
-              <History className="h-5 w-5" />
-            </button>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-red-100 hover:text-red-600 rounded-full transition-colors text-gray-500"
-            >
-              <X className="h-5 w-5" />
-            </button>
+          <Dialog.Description className="utility-shortcut-help">
+            Use o teclado ou os botões. Vírgula e ponto inserem decimais; C
+            limpa o cálculo e Escape fecha.
+          </Dialog.Description>
+          <div className="calculator-display">
+            <p className="calculator-operation">
+              {memory !== 0 && (
+                <span aria-label="Memória armazenada">M · </span>
+              )}
+              {previousValue !== null && operation
+                ? `${previousValue} ${operation}`
+                : ""}
+            </p>
+            <div className="calculator-result-row">
+              <output
+                ref={resultRef}
+                tabIndex={0}
+                aria-label="Resultado"
+                aria-live="polite"
+                title={display}
+                className="calculator-output"
+              >
+                {formatDisplay(display)}
+              </output>
+              <button
+                type="button"
+                className="utility-icon-button calculator-copy"
+                disabled={invalid}
+                onClick={copyToClipboard}
+                aria-label="Copiar resultado"
+              >
+                {copied ? <Check size={18} /> : <Copy size={18} />}
+              </button>
+            </div>
+            <p className="calculator-currency">{currency}</p>
           </div>
-        </div>
-
-        <div className="p-6">
-          {/* Display Area */}
-          <div className="bg-slate-900 rounded-2xl p-6 mb-6 shadow-inner relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500 opacity-50"></div>
-            <div className="text-right min-h-[100px] flex flex-col justify-end">
-              <div className="text-blue-400/70 text-sm font-mono h-6 mb-1 overflow-hidden whitespace-nowrap">
-                {memory !== 0 && (
-                  <span className="mr-2 bg-blue-500/20 px-1.5 rounded text-[10px] text-blue-300">
-                    M
-                  </span>
-                )}
-                {previousValue !== null && operation
-                  ? `${previousValue} ${operation}`
-                  : ""}
-              </div>
-              <div className="flex items-center justify-end gap-3">
-                <div className="text-white text-4xl font-mono font-bold tracking-tighter truncate">
-                  {formatDisplay(display)}
-                </div>
-                <button
-                  onClick={copyToClipboard}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                  title="Copiar"
-                >
-                  {copied ? (
-                    <Check className="h-4 w-4 text-green-400" />
-                  ) : (
-                    <Copy className="h-4 w-4 text-slate-400" />
-                  )}
+          {copyMessage && (
+            <p role="status" className="utility-shortcut-help">
+              {copyMessage}
+            </p>
+          )}
+          {invalid && (
+            <p role="alert" className="calculator-error">
+              Não foi possível concluir o cálculo. Digite um número para começar
+              novamente.
+            </p>
+          )}
+          {showHistory && (
+            <section
+              className="calculator-history"
+              id="calculator-history"
+              aria-label="Histórico de cálculos"
+              tabIndex={0}
+            >
+              <div>
+                <h3>Histórico recente</h3>
+                <button type="button" onClick={() => setHistory([])}>
+                  Limpar histórico
                 </button>
               </div>
-              <div className="text-slate-500 text-xs mt-2 font-medium">
-                {formatCurrency(display)}
-              </div>
-            </div>
-          </div>
-
-          <AnimatePresence>
-            {showHistory && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100 max-h-40 overflow-y-auto"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                    Histórico Recente
-                  </h4>
-                  <button
-                    onClick={() => setHistory([])}
-                    className="text-[10px] text-red-500 hover:underline"
-                  >
-                    Limpar
-                  </button>
-                </div>
-                {history.length === 0 ? (
-                  <p className="text-xs text-gray-400 italic text-center py-2">
-                    Nenhum cálculo ainda
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {history.map((calc, index) => (
-                      <div
-                        key={index}
-                        className="text-xs text-gray-600 font-mono bg-white p-2 rounded border border-gray-100 shadow-sm"
-                      >
-                        {calc}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Keypad */}
-          <div className="grid grid-cols-4 gap-3">
-            {/* Row 1 */}
+              {history.length ? (
+                <ol>
+                  {history.map((calc, index) => (
+                    <li key={index}>{calc}</li>
+                  ))}
+                </ol>
+              ) : (
+                <p>Nenhum cálculo ainda.</p>
+              )}
+            </section>
+          )}
+          <div className="calculator-keypad">
             <Button
               variant="clear"
               onClick={clearAll}
-              className="text-sm font-bold"
+              aria-label="Limpar tudo (AC)"
+              title="Limpar cálculo, memória e histórico"
             >
               AC
             </Button>
-            <Button variant="function" onClick={backspace}>
-              <Delete className="h-5 w-5" />
+            <Button onClick={backspace} aria-label="Apagar último dígito">
+              <Delete size={20} />
             </Button>
-            <Button variant="function" onClick={() => performOperation("%")}>
+            <Button
+              variant="operator"
+              onClick={() => performOperation("%")}
+              aria-label="Porcentagem"
+              aria-pressed={operation === "%"}
+            >
               %
             </Button>
-            <Button variant="operator" onClick={() => performOperation("÷")}>
+            <Button
+              variant="operator"
+              onClick={() => performOperation("÷")}
+              aria-label="Dividir"
+              aria-pressed={operation === "÷"}
+            >
               ÷
             </Button>
-
-            {/* Row 2 */}
-            <Button onClick={() => inputNumber(7)}>7</Button>
-            <Button onClick={() => inputNumber(8)}>8</Button>
-            <Button onClick={() => inputNumber(9)}>9</Button>
-            <Button variant="operator" onClick={() => performOperation("×")}>
-              ×
-            </Button>
-
-            {/* Row 3 */}
-            <Button onClick={() => inputNumber(4)}>4</Button>
-            <Button onClick={() => inputNumber(5)}>5</Button>
-            <Button onClick={() => inputNumber(6)}>6</Button>
-            <Button variant="operator" onClick={() => performOperation("-")}>
-              -
-            </Button>
-
-            {/* Row 4 */}
-            <Button onClick={() => inputNumber(1)}>1</Button>
-            <Button onClick={() => inputNumber(2)}>2</Button>
-            <Button onClick={() => inputNumber(3)}>3</Button>
-            <Button variant="operator" onClick={() => performOperation("+")}>
-              +
-            </Button>
-
-            {/* Row 5 */}
-            <Button onClick={() => setDisplay(String(-parseFloat(display)))}>
+            {[
+              [7, 8, 9, "×"],
+              [4, 5, 6, "-"],
+              [1, 2, 3, "+"],
+            ].map((row) =>
+              row.map((key) =>
+                typeof key === "number" ? (
+                  <Button key={key} onClick={() => inputNumber(key)}>
+                    {key}
+                  </Button>
+                ) : (
+                  <Button
+                    key={key}
+                    variant="operator"
+                    onClick={() => performOperation(key)}
+                    aria-label={
+                      { "×": "Multiplicar", "-": "Subtrair", "+": "Somar" }[key]
+                    }
+                    aria-pressed={operation === key}
+                  >
+                    {key}
+                  </Button>
+                ),
+              ),
+            )}
+            <Button
+              disabled={invalid}
+              aria-label="Inverter sinal"
+              onClick={() => setDisplay(String(-parseFloat(display)))}
+            >
               ±
             </Button>
             <Button onClick={() => inputNumber(0)}>0</Button>
-            <Button onClick={inputDecimal}>.</Button>
-            <Button variant="equals" onClick={handleEquals}>
+            <Button onClick={inputDecimal} aria-label="Separador decimal">
+              .
+            </Button>
+            <Button variant="equals" onClick={handleEquals} aria-label="Igual">
               =
             </Button>
           </div>
-
-          {/* Memory Actions */}
-          <div className="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-gray-100">
+          <div className="calculator-memory">
             <button
+              type="button"
+              aria-label="Limpar memória (MC)"
               onClick={() => setMemory(0)}
-              className="text-[10px] font-bold text-gray-400 hover:text-purple-600 transition-colors"
             >
               MC
             </button>
             <button
+              type="button"
+              aria-label="Recuperar memória (MR)"
               onClick={() => {
                 setDisplay(String(memory));
                 setWaitingForOperand(true);
               }}
-              className="text-[10px] font-bold text-gray-400 hover:text-purple-600 transition-colors"
             >
               MR
             </button>
             <button
+              type="button"
+              aria-label="Armazenar na memória (MS)"
+              disabled={invalid}
               onClick={() => setMemory(parseFloat(display))}
-              className="text-[10px] font-bold text-gray-400 hover:text-purple-600 transition-colors"
             >
               MS
             </button>
             <button
+              type="button"
+              aria-label="Somar à memória (M+)"
+              disabled={invalid || !Number.isFinite(memory + Number(display))}
               onClick={() => setMemory(memory + parseFloat(display))}
-              className="text-[10px] font-bold text-gray-400 hover:text-purple-600 transition-colors"
             >
               M+
             </button>
           </div>
-        </div>
-      </motion.div>
-    </motion.div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
-};
-
-export default Calculator;
+}

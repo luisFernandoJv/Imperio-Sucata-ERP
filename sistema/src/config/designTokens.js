@@ -354,6 +354,15 @@ export const materialTypes = [
 
   // Outros Materiais
   {
+    key: "sucata_miuda",
+    name: "Sucata Miúda",
+    category: "outros",
+    color: "gray",
+    icon: "🔩",
+    minStock: 30,
+    density: "medium",
+  },
+  {
     key: "panela",
     name: "Panela",
     category: "outros",

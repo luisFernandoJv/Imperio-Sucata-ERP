@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Recuperar carregamento | Império Sucata</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+        background: #f8fafc;
+        font: 16px/1.6 system-ui;
+        color: #334155;
+      }
+      main {
+        max-width: 560px;
+        margin: 12vh auto;
+        background: white;
+        padding: 32px;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+      }
+      h1 {
+        color: #0f172a;
+        font-size: 24px;
+        line-height: 1.3;
+      }
+      button {
+        border: 0;
+        border-radius: 8px;
+        padding: 12px 18px;
+        background: #2563eb;
+        color: white;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.6;
+      }
+      a {
+        color: #1d4ed8;
+      }
+      button:focus-visible,
+      a:focus-visible {
+        outline: 3px solid #f59e0b;
+        outline-offset: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Recuperar o carregamento</h1>
+      <p>
+        Remova os arquivos antigos da interface que ficaram salvos neste
+        navegador e abra novamente o sistema.
+      </p>
+      <p>
+        Esta ação mantém a sessão, as preferências e os registros. Ela não
+        altera o banco de dados.
+      </p>
+      <button id="recover" type="button">Recuperar e abrir o sistema</button>
+      <p id="message" role="status" aria-live="polite"></p>
+      <a href="/">Voltar ao sistema</a>
+    </main>
+    <script>
+      document
+        .getElementById("recover")
+        .addEventListener("click", async function () {
+          this.disabled = true;
+          const message = document.getElementById("message");
+          message.textContent = "Removendo arquivos antigos…";
+          try {
+            const registrations = navigator.serviceWorker
+              ? await navigator.serviceWorker.getRegistrations()
+              : [];
+            await Promise.all(
+              registrations
+                .filter((registration) => {
+                  const worker =
+                    registration.active ||
+                    registration.waiting ||
+                    registration.installing;
+                  if (!worker) return false;
+                  const url = new URL(worker.scriptURL);
+                  return (
+                    url.origin === location.origin &&
+                    ["/sw.js", "/dev-sw.js"].includes(url.pathname)
+                  );
+                })
+                .map((registration) => registration.unregister()),
+            );
+            if ("caches" in window) {
+              const names = await caches.keys();
+              await Promise.all(
+                names
+                  .filter(
+                    (name) =>
+                      name.startsWith("imperio-sucata-") ||
+                      (name.startsWith("workbox-precache-v2-") &&
+                        name.endsWith(location.origin + "/")),
+                  )
+                  .map((name) => caches.delete(name)),
+              );
+            }
+            try {
+              sessionStorage.removeItem("imperio-startup-recovery-v1");
+            } catch {}
+            location.replace("/");
+          } catch {
+            message.setAttribute("role", "alert");
+            message.textContent =
+              "O navegador não permitiu concluir a recuperação. Feche as abas do sistema, abra novamente e tente outra vez.";
+            this.disabled = false;
+          }
+        });
+    </script>
+  </body>
+</html>

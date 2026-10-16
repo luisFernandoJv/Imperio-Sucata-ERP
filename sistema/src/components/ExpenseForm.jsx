@@ -1,89 +1,40 @@
-"use client";
-
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Save,
   RotateCcw,
-  Search,
   Tag,
   User,
-  Users,
-  X,
   FileText,
   Calendar,
-  ChevronDown,
   PieChart,
   DownloadCloud,
-  CalendarDays,
   Receipt,
   Banknote,
   AlertCircle,
-  Check,
+  CheckCircle2,
 } from "lucide-react";
-
-import { useToast } from "@/components/ui/use-toast";
+import { getTransactionsByPeriod } from "@/lib/firebaseService";
+import { useFormFeedback } from "@/hooks/useFormFeedback";
+import { FormFeedback } from "@/components/ui/form-feedback";
 import {
-  subscribeToCustomers,
-  getTransactionsByPeriod,
-} from "@/lib/firebaseService";
+  ExpenseCustomerPicker,
+  ExpenseResetDialog,
+} from "./expenses/ExpenseDialogs";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import "@/styles/expense-workspace.css";
 
-/* ── Componentes inline alinhados ao padrão do sistema ───── */
-const Card = ({ children, className = "" }) => (
-  <div
-    className={`bg-white rounded-lg border border-gray-200 shadow-sm ${className}`}
-  >
-    {children}
-  </div>
-);
-
-const Label = ({ children, htmlFor, className = "" }) => (
-  <label
-    htmlFor={htmlFor}
-    className={`text-sm font-medium leading-none text-gray-700 ${className}`}
-  >
-    {children}
-  </label>
-);
-
-const Input = ({ className = "", ...props }) => (
-  <input
-    className={`flex w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm
-                ring-offset-white placeholder:text-gray-400 placeholder:font-normal
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600
-                focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50
-                ${className}`}
-    {...props}
-  />
-);
-
-/* ── Helpers ─────────────────────────────────────────────── */
 const formatCurrency = (value) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
     value || 0,
   );
-
-/* Converte um objeto Date para "yyyy-MM-dd" usando os componentes
-   LOCAIS (getFullYear/getMonth/getDate), evitando o bug clássico de
-   toISOString() que converte para UTC e pode "voltar" um dia em
-   fusos negativos (ex: Brasil, UTC-3). */
 const formatDateForInput = (date) => {
   const d = date instanceof Date ? date : new Date(date);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
-
-/* Recebe o valor "yyyy-MM-dd" do <input type="date"> e monta um Date
-   usando o construtor (ano, mês, dia, ...) — que o JS sempre interpreta
-   em horário LOCAL, ao contrário de new Date("yyyy-MM-dd") que é
-   interpretado como UTC meia-noite e "volta" um dia em fusos negativos.
-   Preserva o horário atual (hora/min/seg) para registrar o momento real
-   do lançamento, em vez de fixar sempre meio-dia. */
 const parseDateInputPreservingTime = (value, previousDate) => {
+  if (!value) return null;
   const [year, month, day] = value.split("-").map(Number);
   const base = previousDate instanceof Date ? previousDate : new Date();
   return new Date(
@@ -96,8 +47,16 @@ const parseDateInputPreservingTime = (value, previousDate) => {
     base.getMilliseconds(),
   );
 };
-
-/* ── Dados estáticos ─────────────────────────────────────── */
+const emptyForm = () => ({
+  nome: "",
+  valor: "",
+  categoria: "operacional",
+  observacoes: "",
+  data: new Date(),
+  formaPagamento: "dinheiro",
+  numeroTransacao: "",
+  clienteId: "",
+});
 const CATEGORIAS = [
   { value: "operacional", label: "Operacional", icon: "⚙️" },
   { value: "emprestimo", label: "Empréstimo (Cliente)", icon: "💰" },
@@ -124,92 +83,73 @@ const PAGAMENTOS = [
   { value: "cheque", label: "Cheque", icon: "✍️" },
 ];
 
-/* ── Separador de seção ──────────────────────────────────── */
-const SectionDivider = ({ label }) => (
-  <div className="flex items-center gap-3 py-1">
-    <div className="flex-1 h-px bg-gray-100" />
-    <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest flex-shrink-0">
-      {label}
-    </span>
-    <div className="flex-1 h-px bg-gray-100" />
-  </div>
-);
-
-/* ── Componente principal ────────────────────────────────── */
-const ExpenseForm = ({ onSuccess }) => {
-  /* Estado — lógica original preservada */
-  const [formData, setFormData] = useState({
-    nome: "",
-    valor: "",
-    categoria: "operacional",
-    observacoes: "",
-    data: new Date(),
-    formaPagamento: "dinheiro",
-    numeroTransacao: "",
-    clienteId: "",
-  });
-  const [saving, setSaving] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
-  const [categorySearch, setCategorySearch] = useState("");
-  const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
-  const [reportCategory, setReportCategory] = useState("all");
-  const [reportStartDate, setReportStartDate] = useState(
-    startOfMonth(new Date()),
-  );
-  const [reportEndDate, setReportEndDate] = useState(endOfMonth(new Date()));
-  const categoryInputRef = useRef(null);
-
-  const [customers, setCustomers] = useState([]);
-  const [showCustomerSelect, setShowCustomerSelect] = useState(false);
-  const [customerSearch, setCustomerSearch] = useState("");
+const ExpenseForm = () => {
+  const [formData, setFormData] = useState(emptyForm);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const customerInputRef = useRef(null);
-
-  const { toast } = useToast();
-
+  const [saving, setSaving] = useState(false);
+  const [slowSave, setSlowSave] = useState(false);
+  const [recorded, setRecorded] = useState(() => {
+    try {
+      const id = sessionStorage.getItem("expense_pending_balance_id");
+      return id ? { id } : null;
+    } catch {
+      return null;
+    }
+  });
+  const [resetOpen, setResetOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [reportCategory, setReportCategory] = useState("all");
+  const [reportStartInput, setReportStartInput] = useState(() =>
+    formatDateForInput(startOfMonth(new Date())),
+  );
+  const [reportEndInput, setReportEndInput] = useState(() =>
+    formatDateForInput(endOfMonth(new Date())),
+  );
+  const [fieldErrors, setFieldErrors] = useState({});
+  const saveRef = useRef(false);
+  const exportRef = useRef(false);
+  const nameRef = useRef(null);
+  const { toast, feedback, dismiss } = useFormFeedback();
+  const reportFeedback = useFormFeedback();
   useEffect(() => {
-    const unsubscribe = subscribeToCustomers((data) => setCustomers(data));
-    return () => unsubscribe();
-  }, []);
-
-  /* Fecha dropdowns ao clicar fora */
-  useEffect(() => {
-    const handler = (e) => {
-      if (
-        categoryInputRef.current &&
-        !categoryInputRef.current.contains(e.target)
-      )
-        setShowCategorySuggestions(false);
-      if (
-        customerInputRef.current &&
-        !customerInputRef.current.contains(e.target)
-      )
-        setShowCustomerSelect(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  /* ── Handlers — lógica original preservada integralmente ── */
-  const handleInputChange = (field, value) =>
+    if (!saving) return;
+    const timer = setTimeout(() => setSlowSave(true), 12000);
+    return () => clearTimeout(timer);
+  }, [saving]);
+  const setField = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-
-  const resetForm = () => {
-    setFormData({
-      nome: "",
-      valor: "",
-      categoria: "operacional",
-      observacoes: "",
-      data: new Date(),
-      formaPagamento: "dinheiro",
-      numeroTransacao: "",
-      clienteId: "",
-    });
-    setCategorySearch("");
-    setSelectedCustomer(null);
-    setCustomerSearch("");
+    setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
   };
-
+  const resetForm = () => {
+    try {
+      sessionStorage.removeItem("expense_pending_balance_id");
+    } catch {
+      /* A proteção em memória continua disponível sem armazenamento. */
+    }
+    setFormData(emptyForm());
+    setSelectedCustomer(null);
+    setRecorded(null);
+    setFieldErrors({});
+    setResetOpen(false);
+    requestAnimationFrame(() => nameRef.current?.focus());
+  };
+  const requestReset = () => {
+    if (saveRef.current) return;
+    const dirty =
+      formData.nome ||
+      formData.valor ||
+      formData.observacoes ||
+      formData.clienteId ||
+      formData.numeroTransacao ||
+      formData.categoria !== "operacional" ||
+      formData.formaPagamento !== "dinheiro" ||
+      formatDateForInput(formData.data) !== formatDateForInput(new Date());
+    if (dirty || recorded) setResetOpen(true);
+    else {
+      resetForm();
+      dismiss();
+    }
+  };
   const selectCustomer = (customer) => {
     setSelectedCustomer(customer);
     setFormData((prev) => ({
@@ -217,103 +157,154 @@ const ExpenseForm = ({ onSuccess }) => {
       clienteId: customer.id,
       nome: customer.nome,
     }));
-    setShowCustomerSelect(false);
-    setCustomerSearch("");
+    setFieldErrors((prev) => ({ ...prev, nome: undefined }));
   };
-
-  const clearCustomer = () => {
-    setSelectedCustomer(null);
-    setFormData((prev) => ({ ...prev, clienteId: "" }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.nome || !formData.valor) {
-      toast({
-        title: "Erro de Validação",
-        description: "Por favor, preencha o nome da despesa e o valor.",
-        variant: "destructive",
-      });
-      return;
-    }
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (saveRef.current || recorded) return;
     const valor = Number.parseFloat(formData.valor);
-    if (valor <= 0) {
+    const errors = {};
+    if (!formData.nome.trim())
+      errors.nome = "Informe o favorecido ou a descrição da despesa.";
+    if (!Number.isFinite(valor) || valor <= 0)
+      errors.valor = "Informe um valor maior que zero.";
+    if (
+      Number.isFinite(valor) &&
+      document.getElementById("expense-valor")?.validity.stepMismatch
+    )
+      errors.valor = "Use no máximo duas casas decimais no valor.";
+    if (
+      !(formData.data instanceof Date) ||
+      !Number.isFinite(formData.data.getTime())
+    )
+      errors.data = "Informe uma data válida.";
+    if (Object.keys(errors).length) {
+      setFieldErrors(errors);
+      document.getElementById(`expense-${Object.keys(errors)[0]}`)?.focus();
       toast({
-        title: "Valor Inválido",
-        description: "O valor da despesa deve ser maior que zero.",
+        title: "Confira os campos",
+        description: "Revise os campos indicados antes de registrar.",
         variant: "destructive",
       });
       return;
     }
+    saveRef.current = true;
+    setSaving(true);
+    setSlowSave(false);
+    dismiss();
+    let transactionId;
     try {
-      setSaving(true);
       const transactionDate =
         formData.data instanceof Date ? formData.data : new Date(formData.data);
-      const expense = {
-        ...formData,
-        valor,
-        data: transactionDate.toISOString(),
+      const { addTransaction, updateCustomerBalance } = await import(
+        "../lib/firebaseService"
+      );
+      transactionId = await addTransaction({
         tipo: "despesa",
-        id: Date.now().toString(),
-      };
-
-      const transactions = JSON.parse(
-        localStorage.getItem("recycling_transactions") || "[]",
-      );
-      transactions.push(expense);
-      localStorage.setItem(
-        "recycling_transactions",
-        JSON.stringify(transactions),
-      );
-
+        material: "despesa",
+        quantidade: 1,
+        precoUnitario: valor,
+        valorTotal: valor,
+        vendedor: formData.nome,
+        observacoes: `${formData.categoria}: ${formData.observacoes}`,
+        data: transactionDate,
+        formaPagamento: formData.formaPagamento,
+        numeroTransacao: formData.numeroTransacao,
+        clienteId: formData.clienteId,
+        categoria: formData.categoria,
+      });
+      // A cópia local só é gravada após a confirmação do banco. Ela não é uma fila de sincronização.
+      let localCopyFailed = false;
       try {
-        const { addTransaction, updateCustomerBalance } =
-          await import("../lib/firebaseService");
-        await addTransaction({
+        const transactions = JSON.parse(
+          localStorage.getItem("recycling_transactions") || "[]",
+        );
+        if (!Array.isArray(transactions)) throw new Error("Invalid local copy");
+        transactions.push({
+          ...formData,
+          valor,
+          data: transactionDate.toISOString(),
           tipo: "despesa",
-          material: "despesa",
-          quantidade: 1,
-          precoUnitario: valor,
-          valorTotal: valor,
-          vendedor: formData.nome,
-          observacoes: `${formData.categoria}: ${formData.observacoes}`,
-          data: transactionDate,
-          formaPagamento: formData.formaPagamento,
-          numeroTransacao: formData.numeroTransacao,
-          clienteId: formData.clienteId,
-          categoria: formData.categoria,
+          id: transactionId,
         });
-        if (
-          formData.clienteId &&
-          formData.categoria === "emprestimo" &&
-          typeof updateCustomerBalance === "function"
-        )
-          await updateCustomerBalance(formData.clienteId, valor, "emprestimo");
-      } catch (firebaseError) {
-        console.error("[v0] Erro Firebase:", firebaseError);
+        localStorage.setItem(
+          "recycling_transactions",
+          JSON.stringify(transactions),
+        );
+      } catch {
+        localCopyFailed = true;
       }
-
+      if (
+        formData.clienteId &&
+        formData.categoria === "emprestimo" &&
+        typeof updateCustomerBalance === "function"
+      ) {
+        try {
+          sessionStorage.setItem("expense_pending_balance_id", transactionId);
+        } catch {
+          /* Não interromper uma gravação já confirmada. */
+        }
+        try {
+          await updateCustomerBalance(formData.clienteId, valor, "emprestimo");
+        } catch {
+          // A transação já existe: reenviar o formulário duplicaria o lançamento.
+          setRecorded({ id: transactionId });
+          toast({
+            title: "Despesa registrada; confira o saldo do cliente",
+            description:
+              "O lançamento foi salvo, mas a atualização do saldo não foi confirmada. Confira o cliente e a transação antes de qualquer ajuste. Não registre esta despesa novamente.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
       toast({
-        title: "Despesa Registrada!",
-        description: `Despesa "${formData.nome}" de ${formatCurrency(valor)} foi registrada com sucesso.`,
-        className: "bg-green-100 border-green-500 text-green-800",
+        title: "Despesa registrada",
+        description: `Despesa “${formData.nome}” de ${formatCurrency(valor)} registrada.${localCopyFailed ? " A cópia neste navegador não pôde ser atualizada; o lançamento já está no banco. Não repita o envio." : " Você pode registrar a próxima despesa."}`,
       });
       resetForm();
-    } catch (error) {
-      console.error("[v0] Erro ao registrar despesa:", error);
+    } catch {
       toast({
-        title: "Erro ao Registrar",
-        description: "Não foi possível registrar a despesa. Tente novamente.",
+        title: "Registro não confirmado",
+        description:
+          "Não foi possível confirmar o registro. Os campos foram mantidos. Confira a conexão e os lançamentos antes de tentar novamente.",
         variant: "destructive",
       });
     } finally {
+      saveRef.current = false;
       setSaving(false);
+      setSlowSave(false);
     }
   };
-
-  const generateSmartReport = async () => {
+  const generateSmartReport = async (event) => {
+    event.preventDefault();
+    if (exportRef.current) return;
+    const reportStartDate = new Date(`${reportStartInput}T00:00:00`);
+    const reportEndDate = new Date(`${reportEndInput}T23:59:59`);
+    if (
+      !reportStartInput ||
+      !reportEndInput ||
+      !Number.isFinite(reportStartDate.getTime()) ||
+      !Number.isFinite(reportEndDate.getTime()) ||
+      reportStartDate > reportEndDate
+    ) {
+      reportFeedback.toast({
+        title: "Confira o período",
+        description:
+          "Informe as duas datas. A data final deve ser igual ou posterior à inicial.",
+        variant: "destructive",
+      });
+      document
+        .getElementById(
+          !reportStartInput ? "expense-report-start" : "expense-report-end",
+        )
+        ?.focus();
+      return;
+    }
+    exportRef.current = true;
+    setIsExporting(true);
+    reportFeedback.dismiss();
     try {
-      setIsExporting(true);
       const transactions = await getTransactionsByPeriod(
         reportStartDate,
         reportEndDate,
@@ -321,16 +312,13 @@ const ExpenseForm = ({ onSuccess }) => {
       let despesas = transactions.filter((t) => t.tipo === "despesa");
       if (reportCategory !== "all")
         despesas = despesas.filter((t) => t.categoria === reportCategory);
-
-      if (despesas.length === 0) {
-        toast({
-          title: "Nenhum dado encontrado",
-          description: "Não existem registros para os filtros selecionados.",
-          variant: "destructive",
+      if (!despesas.length) {
+        reportFeedback.toast({
+          title: "Nenhuma despesa no período",
+          description: "Tente outro período ou categoria.",
         });
         return;
       }
-
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
       doc.setFillColor(15, 23, 42);
@@ -424,386 +412,214 @@ const ExpenseForm = ({ onSuccess }) => {
       doc.save(
         `Relatorio_Despesas_${reportCategory}_${format(reportStartDate, "dd_MM_yyyy")}_a_${format(reportEndDate, "dd_MM_yyyy")}.pdf`,
       );
-      toast({
-        title: "Relatório Gerado",
-        description: "O documento foi processado e baixado.",
+      reportFeedback.toast({
+        title: "Relatório gerado",
+        description: "O PDF foi enviado para download.",
       });
-    } catch (error) {
-      console.error("Erro na exportação:", error);
-      toast({
-        title: "Falha no Processamento",
-        description: "Ocorreu um erro ao gerar o relatório.",
+    } catch {
+      reportFeedback.toast({
+        title: "Não foi possível gerar o relatório",
+        description:
+          "Os filtros foram mantidos. Confira a conexão e tente novamente.",
         variant: "destructive",
       });
     } finally {
+      exportRef.current = false;
       setIsExporting(false);
     }
   };
-
-  /* ── Dados derivados ─────────────────────────────────────── */
-  const selectedCategory = CATEGORIAS.find(
-    (c) => c.value === formData.categoria,
-  );
-  const filteredCategories = CATEGORIAS.filter((c) =>
-    c.label.toLowerCase().includes(categorySearch.toLowerCase()),
-  );
-  const filteredCustomers = customers.filter((c) =>
-    c.nome.toLowerCase().includes(customerSearch.toLowerCase()),
-  );
-  const valorNum = parseFloat(formData.valor) || 0;
   const isEmprestimo = formData.categoria === "emprestimo";
-
-  /* ── Render ─────────────────────────────────────────────── */
+  const valorNum = Number.parseFloat(formData.valor) || 0;
+  const locked = saving || Boolean(recorded);
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-10">
-      {/* ── Cabeçalho ─────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: "linear-gradient(135deg,#ef4444,#dc2626)" }}
-          >
-            <Receipt size={18} className="text-white" />
+    <div className="expense-workspace">
+      <header className="expense-page-heading">
+        <div className="expense-heading-title">
+          <div className="expense-page-icon">
+            <Receipt size={22} aria-hidden="true" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 leading-tight">
-              Registrar Despesa
-            </h1>
-            <p className="text-sm text-gray-500 mt-0.5">
-              Preencha os dados e confirme o lançamento
-            </p>
+            <h1>Registrar Despesa</h1>
+            <p>Preencha os dados e confirme o lançamento.</p>
           </div>
         </div>
-
-        {/* Preview do valor digitado */}
         {valorNum > 0 && (
-          <div className="flex items-center gap-2 px-4 py-2 rounded-lg border border-red-200 bg-red-50">
-            <span className="text-xs font-semibold text-red-400 uppercase tracking-wide">
-              Total
-            </span>
-            <span className="text-lg font-bold text-red-600 tabular-nums">
-              {formatCurrency(valorNum)}
-            </span>
+          <div className="expense-total">
+            <span>Total da despesa</span>
+            <strong>{formatCurrency(valorNum)}</strong>
           </div>
         )}
-      </div>
-
-      {/* ── Layout principal ──────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
-        {/* ── Formulário (2/3) ──────────────────────────── */}
-        <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-4">
-          <Card className="overflow-hidden">
-            {/* Barra colorida no topo */}
-            <div className="h-1 bg-gradient-to-r from-red-500 to-red-400" />
-
-            <div className="p-6 space-y-5">
-              <SectionDivider label="Identificação" />
-
-              {/* Nome + Valor */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="nome" className="flex items-center gap-1.5">
-                    <User size={13} className="text-gray-400" />
-                    Favorecido / Descrição
-                    <span className="text-red-400">*</span>
-                  </Label>
-                  <Input
-                    id="nome"
+      </header>
+      <FormFeedback feedback={feedback} onDismiss={dismiss} />
+      {recorded && (
+        <div className="expense-pending" role="alert">
+          <strong>Lançamento registrado: {recorded.id}</strong>
+          <p>
+            A atualização do saldo precisa ser conferida em Clientes. O
+            formulário está bloqueado para evitar registrar a mesma despesa duas
+            vezes.
+          </p>
+        </div>
+      )}
+      <div className="expense-layout">
+        <form
+          onSubmit={handleSubmit}
+          noValidate
+          aria-label="Registrar despesa"
+          aria-busy={saving}
+          className="expense-entry"
+        >
+          <div className="expense-card expense-entry-card">
+            <div className="expense-section-heading">
+              <h2>Dados da despesa</h2>
+              <p>Favorecido, valor e categoria são obrigatórios.</p>
+            </div>
+            <fieldset disabled={locked}>
+              <div className="expense-fields">
+                <div className="expense-field">
+                  <label htmlFor="expense-nome">
+                    <User size={15} aria-hidden="true" />
+                    Favorecido / Descrição <span aria-hidden="true">*</span>
+                  </label>
+                  <input
+                    ref={nameRef}
+                    id="expense-nome"
                     type="text"
                     value={formData.nome}
-                    onChange={(e) => handleInputChange("nome", e.target.value)}
-                    placeholder="Ex: Conta de energia"
+                    onChange={(e) => setField("nome", e.target.value)}
+                    placeholder="Ex.: Conta de energia"
                     required
-                    className="h-10 font-medium text-gray-800"
+                    aria-invalid={Boolean(fieldErrors.nome)}
+                    aria-describedby={
+                      fieldErrors.nome ? "expense-nome-error" : undefined
+                    }
                   />
+                  {fieldErrors.nome && (
+                    <p className="expense-field-error" id="expense-nome-error">
+                      {fieldErrors.nome}
+                    </p>
+                  )}
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="valor" className="flex items-center gap-1.5">
-                    <Banknote size={13} className="text-gray-400" />
-                    Valor
-                    <span className="text-red-400">*</span>
-                  </Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-red-500 pointer-events-none select-none">
-                      R$
-                    </span>
-                    <Input
-                      id="valor"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.valor}
-                      onChange={(e) =>
-                        handleInputChange("valor", e.target.value)
-                      }
-                      placeholder="0,00"
-                      required
-                      className="h-10 pl-9 font-semibold text-red-600 text-base"
-                    />
-                  </div>
+                <div className="expense-field">
+                  <label htmlFor="expense-valor">
+                    <Banknote size={15} aria-hidden="true" />
+                    Valor (R$) <span aria-hidden="true">*</span>
+                  </label>
+                  <input
+                    id="expense-valor"
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0"
+                    value={formData.valor}
+                    onChange={(e) => setField("valor", e.target.value)}
+                    placeholder="0,00"
+                    required
+                    aria-invalid={Boolean(fieldErrors.valor)}
+                    aria-describedby={
+                      fieldErrors.valor ? "expense-valor-error" : undefined
+                    }
+                  />
+                  {fieldErrors.valor && (
+                    <p className="expense-field-error" id="expense-valor-error">
+                      {fieldErrors.valor}
+                    </p>
+                  )}
+                </div>
+                <div className="expense-field">
+                  <label htmlFor="expense-category">
+                    <Tag size={15} aria-hidden="true" />
+                    Categoria <span aria-hidden="true">*</span>
+                  </label>
+                  <select
+                    id="expense-category"
+                    value={formData.categoria}
+                    onChange={(e) => setField("categoria", e.target.value)}
+                  >
+                    {CATEGORIAS.map((c) => (
+                      <option key={c.value} value={c.value}>
+                        {c.icon} {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="expense-field">
+                  <label htmlFor="expense-customer">
+                    Cliente vinculado <small>(opcional)</small>
+                  </label>
+                  <ExpenseCustomerPicker
+                    selected={selectedCustomer}
+                    disabled={!isEmprestimo || locked}
+                    onSelect={selectCustomer}
+                    onClear={() => {
+                      setSelectedCustomer(null);
+                      setField("clienteId", "");
+                    }}
+                  />
+                  <p className="expense-hint">
+                    {isEmprestimo
+                      ? "Selecione para atualizar o saldo do cliente."
+                      : "Disponível na categoria Empréstimo (Cliente)."}
+                  </p>
+                  {!isEmprestimo && selectedCustomer && (
+                    <p className="expense-hint">
+                      Vínculo mantido: {selectedCustomer.nome}. O saldo não é
+                      atualizado nesta categoria.
+                    </p>
+                  )}
                 </div>
               </div>
-
-              <SectionDivider label="Classificação" />
-
-              {/* Categoria + Cliente */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Categoria */}
-                <div className="space-y-2" ref={categoryInputRef}>
-                  <Label className="flex items-center gap-1.5">
-                    <Tag size={13} className="text-gray-400" />
-                    Categoria
-                    <span className="text-red-400">*</span>
-                  </Label>
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setShowCategorySuggestions((s) => !s)}
-                      className={`w-full h-10 flex items-center gap-2 px-3 rounded-md border text-sm
-                                  font-medium bg-white transition-all duration-150 text-left
-                                  ${
-                                    showCategorySuggestions
-                                      ? "border-blue-500 ring-2 ring-blue-600 ring-offset-2"
-                                      : "border-gray-300 hover:border-gray-400"
-                                  }`}
-                    >
-                      <span className="text-base leading-none">
-                        {selectedCategory?.icon}
-                      </span>
-                      <span className="flex-1 text-gray-800 truncate">
-                        {selectedCategory?.label}
-                      </span>
-                      <ChevronDown
-                        size={15}
-                        className={`text-gray-400 flex-shrink-0 transition-transform duration-200
-                                    ${showCategorySuggestions ? "rotate-180" : ""}`}
-                      />
-                    </button>
-
-                    {showCategorySuggestions && (
-                      <div
-                        className="absolute z-50 left-0 right-0 mt-1 bg-white rounded-lg border border-gray-200
-                                      shadow-lg overflow-hidden"
-                      >
-                        <div className="p-2 border-b border-gray-100">
-                          <div className="relative">
-                            <Search
-                              size={13}
-                              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
-                            />
-                            <input
-                              type="text"
-                              placeholder="Buscar categoria..."
-                              value={categorySearch}
-                              onChange={(e) =>
-                                setCategorySearch(e.target.value)
-                              }
-                              onClick={(e) => e.stopPropagation()}
-                              className="w-full h-8 pl-7 pr-3 text-sm bg-gray-50 rounded border border-gray-200
-                                         focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
-                            />
-                          </div>
-                        </div>
-                        <div className="max-h-56 overflow-y-auto p-1">
-                          {filteredCategories.map((cat) => {
-                            const isSelected = formData.categoria === cat.value;
-                            return (
-                              <button
-                                key={cat.value}
-                                type="button"
-                                onClick={() => {
-                                  handleInputChange("categoria", cat.value);
-                                  setShowCategorySuggestions(false);
-                                  setCategorySearch("");
-                                }}
-                                className={`flex items-center gap-2.5 w-full px-3 py-2 rounded text-sm
-                                            font-medium text-left transition-colors duration-100
-                                            ${
-                                              isSelected
-                                                ? "bg-blue-50 text-blue-700"
-                                                : "text-gray-700 hover:bg-gray-50"
-                                            }`}
-                              >
-                                <span className="text-base leading-none flex-shrink-0">
-                                  {cat.icon}
-                                </span>
-                                <span className="flex-1 truncate">
-                                  {cat.label}
-                                </span>
-                                {isSelected && (
-                                  <Check
-                                    size={13}
-                                    className="text-blue-600 flex-shrink-0"
-                                  />
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+              {isEmprestimo && (
+                <div className="expense-loan-note">
+                  <AlertCircle size={18} aria-hidden="true" />
+                  <p>
+                    {selectedCustomer
+                      ? "Ao registrar, o valor será acrescentado ao saldo do cliente vinculado."
+                      : "Sem cliente vinculado, a despesa será registrada sem atualizar um saldo de cliente."}
+                  </p>
                 </div>
-
-                {/* Cliente */}
-                <div className="space-y-2" ref={customerInputRef}>
-                  <Label
-                    className={`flex items-center gap-1.5 ${!isEmprestimo ? "text-gray-400" : ""}`}
-                  >
-                    <Users
-                      size={13}
-                      className={
-                        isEmprestimo ? "text-gray-400" : "text-gray-300"
-                      }
-                    />
-                    Vínculo com Cliente
-                    {!isEmprestimo && (
-                      <span className="text-xs text-gray-400 font-normal normal-case tracking-normal ml-1">
-                        (empréstimo)
-                      </span>
-                    )}
-                  </Label>
-
-                  <div
-                    className={`relative transition-opacity duration-200 ${!isEmprestimo ? "opacity-40 pointer-events-none" : ""}`}
-                  >
-                    {selectedCustomer ? (
-                      <div className="h-10 flex items-center gap-2 px-3 rounded-md border border-amber-300 bg-amber-50">
-                        <div className="w-5 h-5 rounded bg-amber-400 flex items-center justify-center flex-shrink-0">
-                          <User size={11} className="text-white" />
-                        </div>
-                        <span className="flex-1 text-sm font-medium text-amber-900 truncate">
-                          {selectedCustomer.nome}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={clearCustomer}
-                          className="p-0.5 rounded hover:bg-amber-200 text-amber-600 transition-colors flex-shrink-0"
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setShowCustomerSelect((s) => !s)}
-                        className={`w-full h-10 flex items-center gap-2 px-3 rounded-md border text-sm
-                                    font-medium bg-white transition-all text-left
-                                    ${
-                                      showCustomerSelect
-                                        ? "border-blue-500 ring-2 ring-blue-600 ring-offset-2"
-                                        : "border-gray-300 hover:border-gray-400"
-                                    }`}
+              )}
+              <div className="expense-divider" />
+              <div className="expense-fields">
+                <fieldset className="expense-payment">
+                  <legend>Forma de pagamento</legend>
+                  <div>
+                    {PAGAMENTOS.map((p) => (
+                      <label
+                        key={p.value}
+                        className={
+                          formData.formaPagamento === p.value
+                            ? "is-selected"
+                            : ""
+                        }
                       >
-                        <Search
-                          size={14}
-                          className="text-gray-400 flex-shrink-0"
+                        <input
+                          type="radio"
+                          name="expense-payment"
+                          value={p.value}
+                          checked={formData.formaPagamento === p.value}
+                          onChange={() => setField("formaPagamento", p.value)}
                         />
-                        <span className="text-gray-400 font-normal">
-                          Selecionar cliente...
-                        </span>
-                      </button>
-                    )}
-
-                    {showCustomerSelect && (
-                      <div
-                        className="absolute z-50 left-0 right-0 mt-1 bg-white rounded-lg border border-gray-200
-                                      shadow-lg overflow-hidden"
-                      >
-                        <div className="p-2 border-b border-gray-100">
-                          <input
-                            type="text"
-                            placeholder="Buscar cliente..."
-                            value={customerSearch}
-                            onChange={(e) => setCustomerSearch(e.target.value)}
-                            autoFocus
-                            className="w-full h-8 px-3 text-sm bg-gray-50 rounded border border-gray-200
-                                       focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
-                          />
-                        </div>
-                        <div className="max-h-52 overflow-y-auto p-1">
-                          {filteredCustomers.length > 0 ? (
-                            filteredCustomers.map((c) => (
-                              <button
-                                key={c.id}
-                                type="button"
-                                onClick={() => selectCustomer(c)}
-                                className="w-full flex items-center gap-2.5 px-3 py-2 rounded text-sm
-                                         font-medium text-gray-700 hover:bg-gray-50 text-left transition-colors"
-                              >
-                                <div className="w-7 h-7 rounded bg-gray-100 flex items-center justify-center flex-shrink-0">
-                                  <User size={13} className="text-gray-500" />
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="text-sm font-medium text-gray-800 truncate">
-                                    {c.nome}
-                                  </p>
-                                  <p className="text-xs text-gray-400">
-                                    {c.telefone || "Sem contato"}
-                                  </p>
-                                </div>
-                              </button>
-                            ))
-                          ) : (
-                            <p className="text-center py-6 text-sm text-gray-400">
-                              Nenhum cliente encontrado
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
+                        <span aria-hidden="true">{p.icon}</span>
+                        {p.label}
+                      </label>
+                    ))}
                   </div>
-                </div>
-              </div>
-
-              <SectionDivider label="Detalhes" />
-
-              {/* Forma de pagamento + Data */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Pagamento — pills seguindo padrão do sistema */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1.5">
-                    Forma de Pagamento
-                  </Label>
-                  <div className="flex flex-wrap gap-2">
-                    {PAGAMENTOS.map((p) => {
-                      const isActive = formData.formaPagamento === p.value;
-                      return (
-                        <button
-                          key={p.value}
-                          type="button"
-                          onClick={() =>
-                            handleInputChange("formaPagamento", p.value)
-                          }
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm
-                                      font-medium transition-all duration-150
-                                      ${
-                                        isActive
-                                          ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                                          : "bg-white text-gray-600 border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-                                      }`}
-                        >
-                          <span className="text-sm leading-none">{p.icon}</span>
-                          {p.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Data */}
-                <div className="space-y-2">
-                  <Label htmlFor="data" className="flex items-center gap-1.5">
-                    <Calendar size={13} className="text-gray-400" />
-                    Data do Registro
-                  </Label>
-                  <Input
-                    id="data"
+                </fieldset>
+                <div className="expense-field">
+                  <label htmlFor="expense-data">
+                    <Calendar size={15} aria-hidden="true" />
+                    Data do registro <span aria-hidden="true">*</span>
+                  </label>
+                  <input
+                    id="expense-data"
                     type="date"
-                    value={formatDateForInput(formData.data)}
+                    required
+                    value={
+                      formData.data ? formatDateForInput(formData.data) : ""
+                    }
                     onChange={(e) =>
-                      handleInputChange(
+                      setField(
                         "data",
                         parseDateInputPreservingTime(
                           e.target.value,
@@ -811,205 +627,163 @@ const ExpenseForm = ({ onSuccess }) => {
                         ),
                       )
                     }
-                    className="h-10 font-medium text-gray-700 cursor-pointer"
+                    aria-invalid={Boolean(fieldErrors.data)}
+                    aria-describedby={
+                      fieldErrors.data ? "expense-data-error" : undefined
+                    }
                   />
+                  {fieldErrors.data && (
+                    <p className="expense-field-error" id="expense-data-error">
+                      {fieldErrors.data}
+                    </p>
+                  )}
                 </div>
               </div>
-
-              {/* Observações */}
-              <div className="space-y-2">
-                <Label
-                  htmlFor="observacoes"
-                  className="flex items-center gap-1.5"
-                >
-                  <FileText size={13} className="text-gray-400" />
-                  Observações
-                </Label>
+              <div className="expense-field expense-notes">
+                <label htmlFor="expense-notes">
+                  <FileText size={15} aria-hidden="true" />
+                  Observações <small>(opcional)</small>
+                </label>
                 <textarea
-                  id="observacoes"
-                  value={formData.observacoes}
-                  onChange={(e) =>
-                    handleInputChange("observacoes", e.target.value)
-                  }
-                  placeholder="Detalhes adicionais sobre esta despesa..."
+                  id="expense-notes"
                   rows={3}
-                  className="flex w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm
-                             ring-offset-white placeholder:text-gray-400
-                             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600
-                             focus-visible:ring-offset-2 resize-none font-medium text-gray-700"
+                  value={formData.observacoes}
+                  onChange={(e) => setField("observacoes", e.target.value)}
+                  placeholder="Detalhes adicionais sobre esta despesa…"
                 />
               </div>
-            </div>
-          </Card>
-
-          {/* Botões de ação */}
-          <div className="flex gap-3">
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 h-11 rounded-lg text-sm font-semibold text-white
-                         flex items-center justify-center gap-2 transition-all duration-150
-                         bg-gray-900 hover:bg-gray-800 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-            >
+            </fieldset>
+          </div>
+          {saving && (
+            <p className="expense-saving" role="status">
+              {slowSave
+                ? "A confirmação está demorando. Confira a conexão e aguarde antes de repetir o lançamento."
+                : "Confirmando o registro…"}
+            </p>
+          )}
+          <div className="expense-entry-actions">
+            <button type="submit" className="expense-primary" disabled={locked}>
               {saving ? (
-                <>
-                  <RotateCcw size={15} className="animate-spin" />{" "}
-                  Processando...
-                </>
+                <RotateCcw
+                  size={17}
+                  className="expense-spin"
+                  aria-hidden="true"
+                />
+              ) : recorded ? (
+                <CheckCircle2 size={17} aria-hidden="true" />
               ) : (
-                <>
-                  <Save size={15} /> Registrar Despesa
-                </>
+                <Save size={17} aria-hidden="true" />
               )}
+              {saving
+                ? "Registrando…"
+                : recorded
+                  ? "Lançamento já registrado"
+                  : "Registrar Despesa"}
             </button>
-
             <button
               type="button"
-              onClick={resetForm}
-              className="h-11 px-5 rounded-lg text-sm font-medium text-gray-600
-                         border border-gray-300 bg-white hover:bg-gray-50 hover:text-gray-800
-                         flex items-center gap-2 transition-colors duration-150"
+              className="expense-secondary"
+              onClick={requestReset}
+              disabled={saving}
             >
-              <RotateCcw size={14} />
-              Limpar
+              <RotateCcw size={16} aria-hidden="true" />
+              {recorded ? "Nova despesa" : "Limpar"}
             </button>
           </div>
         </form>
-
-        {/* ── Painel de relatório (1/3) ─────────────────── */}
-        <div className="space-y-3">
-          <Card className="overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-gray-700 to-gray-500" />
-
-            <div className="p-5 space-y-4">
-              {/* Header */}
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-gray-900 flex items-center justify-center flex-shrink-0">
-                  <PieChart size={14} className="text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900 leading-tight">
-                    Relatório PDF
-                  </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Exportar por período
-                  </p>
-                </div>
-              </div>
-
-              <div className="h-px bg-gray-100" />
-
-              {/* Data inicial */}
-              <div className="space-y-1.5">
-                <Label
-                  htmlFor="rptStart"
-                  className="flex items-center gap-1.5 text-xs"
-                >
-                  <CalendarDays size={12} className="text-gray-400" />
-                  Data Inicial
-                </Label>
-                <Input
-                  id="rptStart"
+        <aside className="expense-report" aria-label="Relatório de despesas">
+          <form
+            onSubmit={generateSmartReport}
+            noValidate
+            className="expense-card"
+            aria-busy={isExporting}
+          >
+            <div className="expense-section-heading">
+              <h2>
+                <PieChart size={19} aria-hidden="true" />
+                Relatório PDF
+              </h2>
+              <p>Selecione o período e a categoria.</p>
+            </div>
+            <FormFeedback
+              feedback={reportFeedback.feedback}
+              onDismiss={reportFeedback.dismiss}
+            />
+            <fieldset disabled={isExporting}>
+              <div className="expense-field">
+                <label htmlFor="expense-report-start">Data inicial</label>
+                <input
+                  id="expense-report-start"
                   type="date"
-                  value={reportStartDate.toISOString().split("T")[0]}
-                  onChange={(e) =>
-                    setReportStartDate(new Date(e.target.value + "T00:00:00"))
-                  }
-                  className="h-9 text-sm font-medium text-gray-700 cursor-pointer"
+                  required
+                  value={reportStartInput}
+                  onChange={(e) => setReportStartInput(e.target.value)}
                 />
               </div>
-
-              {/* Data final */}
-              <div className="space-y-1.5">
-                <Label
-                  htmlFor="rptEnd"
-                  className="flex items-center gap-1.5 text-xs"
-                >
-                  <CalendarDays size={12} className="text-gray-400" />
-                  Data Final
-                </Label>
-                <Input
-                  id="rptEnd"
+              <div className="expense-field">
+                <label htmlFor="expense-report-end">Data final</label>
+                <input
+                  id="expense-report-end"
                   type="date"
-                  value={reportEndDate.toISOString().split("T")[0]}
-                  onChange={(e) =>
-                    setReportEndDate(new Date(e.target.value + "T23:59:59"))
-                  }
-                  className="h-9 text-sm font-medium text-gray-700 cursor-pointer"
+                  required
+                  value={reportEndInput}
+                  onChange={(e) => setReportEndInput(e.target.value)}
                 />
               </div>
-
-              {/* Categoria do relatório */}
-              <div className="space-y-1.5">
-                <Label
-                  htmlFor="rptCat"
-                  className="flex items-center gap-1.5 text-xs"
+              <div className="expense-field">
+                <label htmlFor="expense-report-category">
+                  Categoria do relatório
+                </label>
+                <select
+                  id="expense-report-category"
+                  value={reportCategory}
+                  onChange={(e) => setReportCategory(e.target.value)}
                 >
-                  <Tag size={12} className="text-gray-400" />
-                  Categoria
-                </Label>
-                <div className="relative">
-                  <select
-                    id="rptCat"
-                    value={reportCategory}
-                    onChange={(e) => setReportCategory(e.target.value)}
-                    className="w-full h-9 pl-3 pr-8 text-sm font-medium text-gray-700
-                               rounded-md border border-gray-300 bg-white appearance-none
-                               focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2
-                               cursor-pointer"
-                  >
-                    <option value="all">Todas as categorias</option>
-                    {CATEGORIAS.map((c) => (
-                      <option key={c.value} value={c.value}>
-                        {c.icon} {c.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    size={14}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                  />
-                </div>
+                  <option value="all">Todas as categorias</option>
+                  {CATEGORIAS.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.icon} {c.label}
+                    </option>
+                  ))}
+                </select>
               </div>
-
-              {/* Botão gerar */}
-              <button
-                onClick={generateSmartReport}
-                disabled={isExporting}
-                className="w-full h-10 rounded-lg text-sm font-semibold text-white
-                           flex items-center justify-center gap-2 transition-all duration-150
-                           bg-gray-900 hover:bg-gray-800 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {isExporting ? (
-                  <>
-                    <RotateCcw size={14} className="animate-spin" /> Gerando...
-                  </>
-                ) : (
-                  <>
-                    <DownloadCloud size={14} /> Gerar Relatório
-                  </>
-                )}
-              </button>
-            </div>
-          </Card>
-
-          {/* Aviso para empréstimo */}
-          {isEmprestimo && (
-            <div className="flex gap-2.5 p-3 rounded-lg border border-amber-200 bg-amber-50">
-              <AlertCircle
-                size={14}
-                className="text-amber-500 flex-shrink-0 mt-0.5"
-              />
-              <p className="text-xs font-medium text-amber-700 leading-relaxed">
-                Ao registrar um empréstimo, o saldo do cliente vinculado será
-                atualizado automaticamente.
-              </p>
-            </div>
-          )}
-        </div>
+            </fieldset>
+            <button
+              type="submit"
+              className="expense-primary"
+              disabled={isExporting}
+            >
+              {isExporting ? (
+                <RotateCcw
+                  size={17}
+                  className="expense-spin"
+                  aria-hidden="true"
+                />
+              ) : (
+                <DownloadCloud size={17} aria-hidden="true" />
+              )}
+              {isExporting ? "Gerando…" : "Gerar Relatório"}
+            </button>
+          </form>
+          <div className="expense-report-help">
+            <Receipt size={19} aria-hidden="true" />
+            <p>
+              O relatório usa as despesas registradas no período. Os filtros não
+              alteram o lançamento em preenchimento.
+            </p>
+          </div>
+        </aside>
       </div>
+      <ExpenseResetDialog
+        open={resetOpen}
+        onOpenChange={setResetOpen}
+        recorded={Boolean(recorded)}
+        onConfirm={() => {
+          resetForm();
+          dismiss();
+        }}
+      />
     </div>
   );
 };
-
 export default ExpenseForm;

@@ -25,6 +25,11 @@ import {
   getTransactionsByPeriod,
   subscribeToCustomers,
   getTransactionById,
+  getOrInitDailyCash,
+  setCaixaInicialManual as setCaixaInicialManualFirebase,
+  fecharCaixaDia as fecharCaixaDiaFirebase,
+  reabrirCaixaDia as reabrirCaixaDiaFirebase,
+  calculateCaixaDia,
 } from "../lib/firebaseService";
 
 const DataContext = createContext();
@@ -229,7 +234,7 @@ export const DataProvider = ({ children }) => {
 
   const addTransaction = async (transaction) => {
     try {
-      console.log("[v0] DataContext: Adicionando transação:", transaction);
+      console.log("[v0] DataContext: Iniciando registro de transação");
 
       const transactionDate =
         transaction.data instanceof Date
@@ -248,6 +253,7 @@ export const DataProvider = ({ children }) => {
         formaPagamento: transaction.formaPagamento || "dinheiro",
         numeroTransacao: transaction.numeroTransacao || "",
         clienteId: transaction.clienteId || "",
+        usuario: transaction.usuario || "",
       };
 
       console.log(
@@ -288,19 +294,8 @@ export const DataProvider = ({ children }) => {
       );
       setFirebaseConnected(false);
 
-      const localTransaction = {
-        ...transaction,
-        id: Date.now(),
-        date: new Date().toISOString(),
-        synced: false,
-      };
-      const updatedTransactions = [localTransaction, ...transactions];
-      setTransactions(updatedTransactions);
-      localStorage.setItem(
-        "recyclingTransactions",
-        JSON.stringify(updatedTransactions),
-      );
-      console.log("[v0] DataContext: Transação salva localmente como fallback");
+      // Uma falha não transforma a tentativa em uma transação confirmada.
+      // Os formulários mantêm o preenchimento e os listeners mantêm a referência do banco.
       throw error; // Relançar o erro para que o frontend saiba que falhou
     }
   };
@@ -387,14 +382,7 @@ export const DataProvider = ({ children }) => {
       console.error("[v0] DataContext: Erro ao editar transacao:", error);
       setFirebaseConnected(false);
 
-      const updatedTransactions = transactions.map((t) =>
-        t.id === id ? { ...t, ...updatedTransaction, synced: false } : t,
-      );
-      setTransactions(updatedTransactions);
-      localStorage.setItem(
-        "recyclingTransactions",
-        JSON.stringify(updatedTransactions),
-      );
+      // Preservar os dados confirmados quando a edição não for confirmada.
       throw error;
     }
   };
@@ -448,14 +436,7 @@ export const DataProvider = ({ children }) => {
       console.error("[v0] DataContext: Erro ao excluir transação:", error);
       setFirebaseConnected(false);
 
-      // Mesmo em caso de erro na exclusão do Firebase, remover localmente
-      const updatedTransactions = transactions.filter((t) => t.id !== id);
-      setTransactions(updatedTransactions);
-      localStorage.setItem(
-        "recyclingTransactions",
-        JSON.stringify(updatedTransactions),
-      );
-
+      // Não ocultar localmente um registro cuja exclusão falhou.
       throw error;
     }
   };
@@ -473,6 +454,67 @@ export const DataProvider = ({ children }) => {
       );
     }
   };
+
+  // Busca (e cria se necessário) o Caixa Diário de uma data — puxa o saldo
+  // final do dia anterior automaticamente como caixa inicial.
+  const fetchCaixaDiario = useCallback(async (dateInput) => {
+    try {
+      console.log("[v0] Buscando Caixa Diário:", dateInput);
+      return await getOrInitDailyCash(dateInput);
+    } catch (error) {
+      console.error("[v0] Erro ao buscar Caixa Diário:", error);
+      throw error;
+    }
+  }, []);
+
+  // Define (ou remove, passando null) o valor manual do caixa inicial de um dia,
+  // para a cliente comparar com o valor automático puxado do dia anterior.
+  const setCaixaInicialManual = useCallback(async (dateInput, valor) => {
+    try {
+      return await setCaixaInicialManualFirebase(dateInput, valor);
+    } catch (error) {
+      console.error("[v0] Erro ao definir caixa inicial manual:", error);
+      throw error;
+    }
+  }, []);
+
+  // Fecha o caixa do dia com a contagem física (valor contado na gaveta),
+  // registrando quem fez o fechamento.
+  const fecharCaixaDia = useCallback(
+    async (dateInput, { valorContado, usuario }) => {
+      try {
+        return await fecharCaixaDiaFirebase(dateInput, {
+          valorContado,
+          usuario,
+        });
+      } catch (error) {
+        console.error("[v0] Erro ao fechar caixa do dia:", error);
+        throw error;
+      }
+    },
+    [],
+  );
+
+  // Reabre um caixa já fechado (ex: esqueceram de lançar algo).
+  const reabrirCaixaDia = useCallback(async (dateInput) => {
+    try {
+      return await reabrirCaixaDiaFirebase(dateInput);
+    } catch (error) {
+      console.error("[v0] Erro ao reabrir caixa do dia:", error);
+      throw error;
+    }
+  }, []);
+
+  // Recalcula apenas os totais do dia (sem tocar no caixa inicial salvo) —
+  // usado para atualizar a tela após adicionar/editar/excluir uma movimentação.
+  const refreshCaixaDiario = useCallback(async (dateInput) => {
+    try {
+      return await calculateCaixaDia(dateInput);
+    } catch (error) {
+      console.error("[v0] Erro ao recalcular Caixa Diário:", error);
+      throw error;
+    }
+  }, []);
 
   const fetchDailyReports = useCallback(async (startDate, endDate) => {
     try {
@@ -538,6 +580,11 @@ export const DataProvider = ({ children }) => {
     fetchMonthlyReport,
     fetchYearlyReport,
     fetchTransactionsByPeriod,
+    fetchCaixaDiario,
+    setCaixaInicialManual,
+    fecharCaixaDia,
+    reabrirCaixaDia,
+    refreshCaixaDiario,
     // Legacy aliases
     getDailyReports: fetchDailyReports,
     getMonthlyReport: fetchMonthlyReport,

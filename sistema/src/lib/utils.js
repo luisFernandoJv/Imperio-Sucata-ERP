@@ -1,5 +1,6 @@
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { escapeHtml, csvText } from "./safeExport";
 
 export function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -61,7 +62,7 @@ export const formatDate = (dateString) => {
   if (!dateString) return "--/--/----";
   try {
     return new Date(dateString).toLocaleDateString("pt-BR");
-  } catch (e) {
+  } catch {
     return "--/--/----";
   }
 };
@@ -76,7 +77,7 @@ export const formatDateTime = (dateString) => {
       hour: "2-digit",
       minute: "2-digit",
     });
-  } catch (e) {
+  } catch {
     return "";
   }
 };
@@ -115,6 +116,7 @@ export const printInventory = (inventory, materials) => {
   const printWindow = window.open("", "_blank");
   if (!printWindow) return alert("Por favor, permita popups para imprimir.");
 
+  printWindow.opener = null;
   const rows = materials
     .map((material) => {
       const item = inventory[material.key] || {
@@ -126,8 +128,8 @@ export const printInventory = (inventory, materials) => {
 
       return `
         <tr>
-          <td>${material.name}</td>
-          <td>${material.category}</td>
+          <td>${escapeHtml(material.name)}</td>
+          <td>${escapeHtml(material.category)}</td>
           <td style="text-align: right">${formatWeight(item.quantidade)}</td>
           <td style="text-align: right">${formatCurrency(item.precoCompra)}</td>
           <td style="text-align: right">${formatCurrency(item.precoVenda)}</td>
@@ -205,8 +207,8 @@ export const exportInventoryToCSV = (inventory, materials) => {
     const total = (item.quantidade || 0) * (item.precoCompra || 0);
 
     return [
-      material.name,
-      material.category,
+      csvText(material.name),
+      csvText(material.category),
       (item.quantidade || 0).toFixed(2).replace(".", ","),
       (item.precoCompra || 0).toFixed(2).replace(".", ","),
       (item.precoVenda || 0).toFixed(2).replace(".", ","),

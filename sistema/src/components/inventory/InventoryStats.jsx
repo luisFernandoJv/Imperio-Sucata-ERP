@@ -14,6 +14,7 @@ const StatWidget = ({ label, value, icon: Icon, color, subtext }) => {
   };
 
   const theme = themes[color] || themes.blue;
+  const StatIcon = Icon;
 
   return (
     <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden group">
@@ -32,14 +33,14 @@ const StatWidget = ({ label, value, icon: Icon, color, subtext }) => {
         <div
           className={`p-3 rounded-xl ${theme} transition-transform group-hover:scale-110`}
         >
-          <Icon className="h-6 w-6" />
+          <StatIcon className="h-6 w-6" />
         </div>
       </div>
       {/* Background Decorativo Sutil */}
       <div
         className={`absolute -bottom-6 -right-6 opacity-5 pointer-events-none transform rotate-12 group-hover:scale-125 transition-transform duration-500`}
       >
-        <Icon className={`h-32 w-32 ${theme.split(" ")[1]}`} />
+        <StatIcon className={`h-32 w-32 ${theme.split(" ")[1]}`} />
       </div>
     </div>
   );
@@ -71,7 +72,11 @@ export const InventoryStats = memo(({ inventory, materials }) => {
   }, [inventory, materials]);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div
+      role="group"
+      aria-label="Resumo de todo o estoque"
+      className="inventory-stats grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+    >
       <StatWidget
         label="Peso Total"
         value={formatWeight(stats.totalQuantity)}

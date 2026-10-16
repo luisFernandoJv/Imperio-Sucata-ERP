@@ -1,136 +1,118 @@
-"use client";
-
-import { useState, memo, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useRef, useState } from "react";
+import * as Dialog from "@radix-ui/react-dialog";
 import {
   TrendingUp,
   TrendingDown,
-  DollarSign,
+  Users,
+  Receipt,
   Calculator,
   Plus,
   X,
-  MoreVertical,
-  Users,
 } from "lucide-react";
-import { Button } from "../ui/button";
 
-export const QuickActions = memo(({ onAction }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const menuRef = useRef(null);
-
-  // Fecha o menu se clicar fora dele
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
+export function QuickActions({ onAction }) {
+  const [open, setOpen] = useState(false);
+  const pending = useRef(null);
+  const triggerRef = useRef(null);
   const actions = [
     {
-      id: "nova-venda",
+      id: "sale",
       label: "Nova Venda",
+      detail: "Abrir um lançamento de venda",
       icon: TrendingUp,
-      color: "bg-gradient-to-r from-green-500 to-emerald-600",
-      action: () => {
-        onAction("transaction", "venda");
-        setIsOpen(false);
-      },
+      tab: "transaction",
+      type: "venda",
     },
     {
-      id: "nova-compra",
+      id: "purchase",
       label: "Nova Compra",
+      detail: "Abrir um lançamento de compra",
       icon: TrendingDown,
-      color: "bg-gradient-to-r from-blue-500 to-cyan-600",
-      action: () => {
-        onAction("transaction", "compra");
-        setIsOpen(false);
-      },
+      tab: "transaction",
+      type: "compra",
     },
     {
-      id: "novo-cliente",
-      label: "Novo Cliente",
+      id: "clients",
+      label: "Clientes",
+      detail: "Consultar clientes ou criar um cadastro",
       icon: Users,
-      color: "bg-gradient-to-r from-indigo-500 to-purple-600",
-      action: () => {
-        onAction("clients");
-        setIsOpen(false);
-      },
+      tab: "clients",
     },
     {
-      id: "nova-despesa",
+      id: "expense",
       label: "Nova Despesa",
-      icon: DollarSign,
-      color: "bg-gradient-to-r from-red-500 to-pink-600",
-      action: () => {
-        onAction("expenses");
-        setIsOpen(false);
-      },
+      detail: "Abrir o registro de despesas",
+      icon: Receipt,
+      tab: "expenses",
     },
     {
-      id: "calculadora",
+      id: "calculator",
       label: "Calculadora",
+      detail: "Calcular sem sair da tela atual",
       icon: Calculator,
-      color: "bg-gradient-to-r from-purple-500 to-indigo-600",
-      action: () => {
-        onAction("calculator");
-        setIsOpen(false);
-      },
+      tab: "calculator",
     },
   ];
-
   return (
-    <div
-      ref={menuRef}
-      className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 pointer-events-none"
-    >
-      <AnimatePresence>
-        {isOpen && (
-          <div className="flex flex-col gap-3 mb-2 pointer-events-auto">
-            {actions.map((action, index) => (
-              <motion.div
+    <Dialog.Root open={open} onOpenChange={setOpen}>
+      <Dialog.Trigger asChild>
+        <button
+          ref={triggerRef}
+          type="button"
+          className="shell-tool-button"
+          aria-label="Abrir ações rápidas"
+        >
+          <Plus size={18} aria-hidden="true" />
+          <span>Ações rápidas</span>
+        </button>
+      </Dialog.Trigger>
+      <Dialog.Portal>
+        <Dialog.Overlay className="utility-overlay" />
+        <Dialog.Content
+          className="utility-dialog quick-actions-dialog"
+          onCloseAutoFocus={(event) => {
+            if (!pending.current) return;
+            event.preventDefault();
+            const action = pending.current;
+            pending.current = null;
+            triggerRef.current?.focus();
+            requestAnimationFrame(() => onAction(action.tab, action.type));
+          }}
+        >
+          <div className="utility-heading">
+            <div>
+              <Dialog.Title>Ações rápidas</Dialog.Title>
+              <Dialog.Description>
+                Escolha uma tarefa. Escape fecha esta janela.
+              </Dialog.Description>
+            </div>
+            <Dialog.Close
+              className="utility-icon-button"
+              aria-label="Fechar ações rápidas"
+            >
+              <X size={20} />
+            </Dialog.Close>
+          </div>
+          <div className="utility-action-list">
+            {actions.map((action) => (
+              <button
                 key={action.id}
-                initial={{ opacity: 0, scale: 0.8, x: 20 }}
-                animate={{ opacity: 1, scale: 1, x: 0 }}
-                exit={{ opacity: 0, scale: 0.8, x: 20 }}
-                transition={{ duration: 0.2, delay: index * 0.05 }}
-                className="flex items-center justify-end gap-3"
+                type="button"
+                onClick={() => {
+                  pending.current = action;
+                  setOpen(false);
+                }}
               >
-                <span className="bg-white text-gray-700 px-3 py-1 rounded-md text-sm font-medium shadow-md border border-gray-100 hidden sm:block">
-                  {action.label}
+                <action.icon size={21} aria-hidden="true" />
+                <span>
+                  <strong>{action.label}</strong>
+                  <small>{action.detail}</small>
                 </span>
-                <Button
-                  onClick={action.action}
-                  className={`h-12 w-12 rounded-full ${action.color} text-white shadow-lg hover:shadow-xl hover:scale-110 transition-all p-0 flex items-center justify-center`}
-                  title={action.label}
-                  aria-label={action.label}
-                >
-                  <action.icon className="h-5 w-5" />
-                </Button>
-              </motion.div>
+              </button>
             ))}
           </div>
-        )}
-      </AnimatePresence>
-
-      <motion.button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`h-14 w-14 rounded-full shadow-xl flex items-center justify-center transition-all duration-300 pointer-events-auto focus:outline-none focus:ring-4 focus:ring-blue-300 ${
-          isOpen
-            ? "bg-red-500 text-white rotate-90 hover:bg-red-600"
-            : "bg-blue-600 text-white hover:bg-blue-700 hover:scale-105"
-        }`}
-        aria-label="Menu de Ações Rápidas"
-        aria-expanded={isOpen}
-        whileTap={{ scale: 0.9 }}
-      >
-        {isOpen ? <X className="h-6 w-6" /> : <Plus className="h-8 w-8" />}
-      </motion.button>
-    </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
-});
-
-QuickActions.displayName = "QuickActions";
+}

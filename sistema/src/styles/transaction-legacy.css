@@ -1,0 +1,73 @@
+/* Preserve the original single-card transaction workflow and material icons. */
+.transaction-legacy {
+  max-width: 960px;
+}
+.transaction-legacy .transaction-fields {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.transaction-legacy button {
+  min-height: 40px;
+}
+.transaction-legacy button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+.transaction-legacy input {
+  min-height: 44px;
+}
+.transaction-legacy .transaction-date-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 112px;
+  gap: 8px;
+}
+.transaction-legacy .transaction-values {
+  font-variant-numeric: tabular-nums;
+}
+.transaction-legacy #material-options,
+.transaction-legacy #customer-options {
+  isolation: isolate;
+}
+.transaction-legacy #material-options button {
+  min-width: 0;
+}
+.transaction-legacy-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgb(15 23 42 / 0.5);
+}
+.transaction-legacy-modal {
+  position: fixed;
+  z-index: 101;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+}
+@media (min-width: 1024px) {
+  .transaction-legacy > form > fieldset > .overflow-hidden > .p-5 {
+    padding: 24px 28px;
+  }
+}
+@media (max-width: 550px) {
+  .transaction-legacy > .flex {
+    flex-wrap: wrap;
+  }
+  .transaction-legacy .transaction-values {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .transaction-legacy .transaction-values > :last-child {
+    grid-column: 1 / -1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .transaction-legacy *,
+  .transaction-legacy-modal * {
+    transition: none !important;
+  }
+}

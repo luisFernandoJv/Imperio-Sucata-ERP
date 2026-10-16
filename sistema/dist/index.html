@@ -7,82 +7,148 @@
 
     <!-- Theme colors -->
     <meta name="theme-color" content="#ea580c" />
-    <meta name="msapplication-TileColor" content="#ea580c">
-    
+    <meta name="msapplication-TileColor" content="#ea580c" />
+
     <!-- PWA Description -->
-    <meta name="description" content="Sistema completo de gestão para reciclagem de materiais com controle de estoque, vendas e relatórios">
-    
+    <meta
+      name="description"
+      content="Sistema completo de gestão para reciclagem de materiais com controle de estoque, vendas e relatórios"
+    />
+
     <!-- PWA meta tags -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Império Sucata">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="msapplication-tap-highlight" content="no">
-    
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="Império Sucata" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="msapplication-tap-highlight" content="no" />
+
     <!-- Favicons - Ordem correta para melhor compatibilidade -->
-    <link rel="icon" type="image/svg+xml" href="/favicon_io/ico.svg">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon_io/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon_io/favicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/favicon_io/apple-touch-icon.png">
-    
+    <link rel="icon" type="image/svg+xml" href="/favicon_io/ico.svg" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/favicon_io/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="/favicon_io/favicon-16x16.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/favicon_io/apple-touch-icon.png"
+    />
+
     <!-- Android Chrome icons -->
-    <link rel="icon" type="image/png" sizes="192x192" href="/favicon_io/android-chrome-192x192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="/favicon_io/android-chrome-512x512.png">
-    
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="/favicon_io/android-chrome-192x192.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="512x512"
+      href="/favicon_io/android-chrome-512x512.png"
+    />
+
     <!-- Manifest -->
-    <link rel="manifest" href="/manifest.json">
-    
+    <link rel="manifest" href="/manifest.json" />
+
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+
     <!-- Preload critical assets -->
-    <link rel="preload" href="/favicon_io/ico.svg" as="image" type="image/svg+xml">
-    
-    <script type="module" crossorigin src="/assets/index-CZGq5NhD.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/vendor-DmeOuXdA.js">
-    <link rel="modulepreload" crossorigin href="/assets/utils-CMGQddog.js">
-    <link rel="modulepreload" crossorigin href="/assets/firebase-DWda5Vjt.js">
-    <link rel="modulepreload" crossorigin href="/assets/charts-SixuJtMk.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-C2MnQieW.css">
-  <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+    <link
+      rel="preload"
+      href="/favicon_io/ico.svg"
+      as="image"
+      type="image/svg+xml"
+    />
+    <script type="module" crossorigin src="/assets/index-CNnG4Vtz.js"></script>
+  <link rel="manifest" href="/manifest.webmanifest"></head>
   <body class="antialiased bg-slate-50 text-slate-900 font-sans">
     <noscript>
-      <div style="padding: 2rem; text-align: center; background: #fee; color: #c33;">
+      <div
+        style="padding: 2rem; text-align: center; background: #fee; color: #c33"
+      >
         <h1>JavaScript Necessário</h1>
-        <p>Este aplicativo requer JavaScript para funcionar. Por favor, habilite o JavaScript no seu navegador.</p>
+        <p>
+          Este aplicativo requer JavaScript para funcionar. Por favor, habilite
+          o JavaScript no seu navegador.
+        </p>
       </div>
     </noscript>
-    
-    <div id="root"></div>
-    
+
+    <div id="root">
+      <div
+        id="startup-message"
+        role="status"
+        style="
+          max-width: 520px;
+          margin: 15vh auto;
+          padding: 28px;
+          border: 1px solid #e2e8f0;
+          border-radius: 16px;
+          background: #fff;
+          font: 16px/1.6 system-ui;
+          color: #334155;
+        "
+      >
+        <h1
+          id="startup-title"
+          style="font-size: 22px; margin: 0 0 12px; color: #0f172a"
+        >
+          Abrindo o Império Sucata…
+        </h1>
+        <p id="startup-description">
+          Se a tela não avançar, tente recuperar o carregamento.
+        </p>
+        <button
+          id="startup-reload"
+          type="button"
+          hidden
+          style="
+            padding: 10px 16px;
+            margin: 8px 12px 8px 0;
+            border: 0;
+            border-radius: 8px;
+            background: #2563eb;
+            color: #fff;
+            font: inherit;
+            cursor: pointer;
+          "
+        >
+          Tentar novamente
+        </button>
+        <a
+          href="/recuperar.html"
+          style="color: #1d4ed8; text-decoration: underline"
+          >Recuperar carregamento</a
+        >
+      </div>
+    </div>
+
     <script>
       // Remove no-js class for progressive enhancement
-      document.documentElement.classList.remove('no-js');
-      document.documentElement.classList.add('js');
-      
-      // Register Service Worker for PWA
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then((registration) => {
-              console.log('[PWA] Service Worker registrado com sucesso:', registration.scope);
-              
-              // Check for updates periodically
-              setInterval(() => {
-                registration.update();
-              }, 60 * 60 * 1000); // Check every hour
-            })
-            .catch((error) => {
-              console.error('[PWA] Falha ao registrar Service Worker:', error);
-            });
-        });
-      }
-      
+      document.documentElement.classList.remove("no-js");
+      document.documentElement.classList.add("js");
+
       // Detect and handle iOS standalone mode
       if (window.navigator.standalone === true) {
-        document.documentElement.classList.add('standalone');
+        document.documentElement.classList.add("standalone");
       }
     </script>
   </body>

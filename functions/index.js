@@ -1,3 +1,4 @@
+const { requireAuthenticated, requireAdmin } = require("./security");
 const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { onCall } = require("firebase-functions/v2/https");
@@ -513,6 +514,7 @@ exports.getAggregatedReports = onCall(
     timeoutSeconds: 30,
   },
   async (request) => {
+    requireAuthenticated(request);
     const { startDate, endDate } = request.data;
     if (!startDate || !endDate) {
       throw new Error("As datas são obrigatórias.");
@@ -536,6 +538,7 @@ exports.generateReportFile = onCall(
     timeoutSeconds: 120,
   },
   async (request) => {
+    requireAuthenticated(request);
     const { format, filters } = request.data;
     const bucket = admin.storage().bucket();
     const { HttpsError } = require("firebase-functions/v2/https");
@@ -737,6 +740,7 @@ exports.getAggregatedReport = onCall(
     timeoutSeconds: 30,
   },
   async (request) => {
+    requireAuthenticated(request);
     const { startDate, endDate, material } = request.data;
 
     if (!startDate || !endDate) {
@@ -997,6 +1001,7 @@ exports.getLastTransactionPrice = onCall(
     timeoutSeconds: 10,
   },
   async (request) => {
+    requireAuthenticated(request);
     const { material, tipo } = request.data;
 
     if (!material || !tipo) {
@@ -1043,6 +1048,7 @@ exports.getLiveSummary = onCall(
     timeoutSeconds: 10,
   },
   async (_request) => {
+    requireAuthenticated(_request);
     const cacheKey = "live_summary";
 
     return getCachedData(cacheKey, async () => {
@@ -1115,6 +1121,7 @@ exports.backfillHistory = onCall(
     maxInstances: 1, // Apenas uma instância por vez
   },
   async (request) => {
+    requireAdmin(request);
     const { startDate, endDate, forceOverwrite } = request.data || {};
 
     logger.info("=== INICIANDO BACKFILL DE HISTÓRICO ===");
@@ -1404,6 +1411,7 @@ exports.generateMonthReport = onCall(
     maxInstances: 1,
   },
   async (request) => {
+    requireAdmin(request);
     const { year, month, forceOverwrite } = request.data;
 
     if (!year || month === undefined) {

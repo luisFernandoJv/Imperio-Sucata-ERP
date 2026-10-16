@@ -117,6 +117,7 @@ const MATERIALS = {
   "perfil natural": { label: "Perfil Natural", color: "bg-indigo-500" },
   bloco: { label: "Bloco", color: "bg-pink-600" },
   metal: { label: "Metal", color: "bg-gray-700" },
+  sucata_miuda: { label: "Sucata Miúda", color: "bg-gray-500" },
   inox: { label: "Inox", color: "bg-blue-700" },
   bateria: { label: "Bateria", color: "bg-green-700" },
   motor_gel: { label: "Motor Gel", color: "bg-purple-700" },

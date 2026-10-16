@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package,
@@ -11,7 +11,6 @@ import {
   AlertTriangle,
   Edit,
   PlusCircle,
-  Plus,
 } from "lucide-react";
 import { useInventory, useUpdateInventory } from "../../hooks/useFirebaseQuery";
 import { useQueryClient } from "@tanstack/react-query";
@@ -29,6 +28,13 @@ import {
   deleteMaterialFromInventory,
   updateInventoryItem,
 } from "../../lib/firebaseService";
+
+import { InventoryPriceEditor } from "./InventoryPriceEditor";
+import { FormFeedback } from "../ui/form-feedback";
+import { useFormFeedback } from "../../hooks/useFormFeedback";
+import "../../styles/inventory-workspace.css";
+
+const MotionDiv = motion.div;
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 const ADMIN_PASSWORD = "imperio2025";
@@ -101,7 +107,7 @@ const PasswordModal = ({ isOpen, action, onConfirm, onCancel }) => {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="absolute inset-0" onClick={onCancel} />
-      <motion.div
+      <MotionDiv
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
@@ -159,7 +165,7 @@ const PasswordModal = ({ isOpen, action, onConfirm, onCancel }) => {
             Confirmar
           </button>
         </div>
-      </motion.div>
+      </MotionDiv>
     </div>
   );
 };
@@ -234,7 +240,7 @@ const MaterialFormModal = ({
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="absolute inset-0" onClick={onClose} />
-      <motion.div
+      <MotionDiv
         initial={{ scale: 0.92, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.92, opacity: 0, y: 20 }}
@@ -426,7 +432,7 @@ const MaterialFormModal = ({
             {isEdit ? "Salvar Alterações" : "Criar Material"}
           </button>
         </div>
-      </motion.div>
+      </MotionDiv>
     </div>
   );
 };
@@ -434,6 +440,10 @@ const MaterialFormModal = ({
 export default function OptimizedInventory() {
   const [editingItem, setEditingItem] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [savingPrices, setSavingPrices] = useState(false);
+  const savingPricesRef = useRef(false);
+  const editorOpenerRef = useRef(null);
+  const { toast, feedback, dismiss } = useFormFeedback();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
   const [viewMode, setViewMode] = useState("grid");
@@ -448,14 +458,20 @@ export default function OptimizedInventory() {
 
   const queryClient = useQueryClient();
   const debouncedSearch = useDebounce(searchTerm, 300);
-  const { data: inventory = {}, isLoading, error } = useInventory();
+  const {
+    data: inventory = {},
+    isLoading,
+    error,
+    refetch,
+    isFetching,
+  } = useInventory();
   const updateInventoryMutation = useUpdateInventory();
 
   // Força busca fresca do Firestore toda vez que a página abre,
   // ignorando cache antigo que pode conter chaves corrompidas
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["inventory"] });
-  }, []);
+  }, [queryClient]);
 
   // Lista dinâmica: base hardcoded + materiais extras que existem no Firestore
   const allMaterials = useMemo(() => {
@@ -480,9 +496,15 @@ export default function OptimizedInventory() {
 
   const filteredMaterials = useMemo(() => {
     return allMaterials.filter((material) => {
-      const matchesSearch = material.name
-        .toLowerCase()
-        .includes(debouncedSearch.toLowerCase());
+      const normalize = (value) =>
+        value
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .trim();
+      const matchesSearch = normalize(material.name).includes(
+        normalize(debouncedSearch),
+      );
       const matchesCategory =
         selectedCategory === "todos" || material.category === selectedCategory;
       const item = inventory[material.key] || {};
@@ -501,6 +523,7 @@ export default function OptimizedInventory() {
   ]);
 
   const handleEdit = (materialKey) => {
+    editorOpenerRef.current = document.activeElement;
     setEditingItem(materialKey);
     setEditForm(
       inventory[materialKey] || {
@@ -512,23 +535,44 @@ export default function OptimizedInventory() {
   };
 
   const handleSave = async () => {
-    if (!editingItem) return;
+    if (!editingItem || savingPricesRef.current) return false;
+    savingPricesRef.current = true;
+    setSavingPrices(true);
     try {
       await updateInventoryMutation.mutateAsync({
         material: editingItem,
-        data: editForm,
+        data: {
+          ...editForm,
+          precoCompra: Number(editForm.precoCompra),
+          precoVenda: Number(editForm.precoVenda),
+        },
       });
       setEditingItem(null);
       setEditForm({});
-    } catch (error) {
-      console.error("Error updating inventory:", error);
-      alert("Erro ao salvar alterações");
+      toast({
+        title: "Preços atualizados",
+        description:
+          "Os preços foram salvos. A quantidade registrada foi mantida.",
+      });
+      return true;
+    } catch {
+      return false;
+    } finally {
+      savingPricesRef.current = false;
+      setSavingPrices(false);
     }
   };
 
   const handleCancel = () => {
+    if (savingPricesRef.current) return;
     setEditingItem(null);
     setEditForm({});
+  };
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSelectedCategory("todos");
+    setShowLowStock(false);
   };
 
   // ── Handlers de gestão dinâmica de materiais ─────────────────────────────
@@ -576,16 +620,12 @@ export default function OptimizedInventory() {
     setShowPasswordModal(true);
   }, []);
 
-  const showToast = useCallback((msg, type = "success") => {
-    const el = document.createElement("div");
-    const bg =
-      type === "success"
-        ? "bg-green-100 border-l-4 border-green-500 text-green-800"
-        : "bg-blue-100 border-l-4 border-blue-500 text-blue-800";
-    el.innerHTML = `<div class="fixed top-4 right-4 z-[999] p-4 rounded-xl shadow-xl max-w-sm text-sm font-semibold ${bg} animate-in slide-in-from-right">${msg}</div>`;
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 4000);
-  }, []);
+  const showToast = useCallback(
+    (msg) => {
+      toast({ title: "Estoque atualizado", description: msg });
+    },
+    [toast],
+  );
 
   const handlePasswordConfirm = useCallback(async () => {
     if (!pendingAction) return;
@@ -657,17 +697,37 @@ export default function OptimizedInventory() {
   }, [pendingAction, editingMaterialMeta, queryClient, showToast]);
 
   if (isLoading) return <LoadingOverlay message="Carregando estoque..." />;
-  if (error)
+  if (error && Object.keys(inventory).length === 0 && !editingItem)
     return (
       <EmptyState
-        title="Erro de Conexão"
-        description="Não foi possível carregar os dados."
+        title="Não foi possível carregar o estoque"
+        description="Confira a conexão e tente novamente."
+        action={() => refetch()}
+        actionLabel="Tentar novamente"
       />
     );
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-20">
-      <div className="w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="inventory-workspace">
+      <div className="inventory-content">
+        <FormFeedback feedback={feedback} onDismiss={dismiss} />
+        {error && (
+          <div
+            role="alert"
+            className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+          >
+            Não foi possível atualizar a referência. Os dados já exibidos e o
+            preenchimento foram mantidos.{" "}
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="font-semibold underline"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-8 pl-1">
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
@@ -683,9 +743,18 @@ export default function OptimizedInventory() {
 
         {/* Widgets KPIs */}
         <InventoryStats inventory={inventory} materials={allMaterials} />
+        {isFetching && (
+          <p role="status" className="mb-3 text-sm text-slate-500">
+            Atualizando referência de estoque…
+          </p>
+        )}
 
         {/* Barra de Filtros */}
         <InventoryFilters
+          onClear={clearFilters}
+          resultCount={filteredMaterials.length}
+          totalCount={allMaterials.length}
+          searching={searchTerm !== debouncedSearch}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           selectedCategory={selectedCategory}
@@ -703,19 +772,21 @@ export default function OptimizedInventory() {
         <div className="min-h-[400px]">
           <AnimatePresence mode="wait">
             {filteredMaterials.length === 0 ? (
-              <motion.div
+              <MotionDiv
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
                 <EmptyState
                   title="Nenhum material encontrado"
-                  description="Tente ajustar seus filtros."
+                  description="Tente outro nome ou remova os filtros aplicados."
+                  action={clearFilters}
+                  actionLabel="Limpar filtros"
                   icon={Package}
                 />
-              </motion.div>
+              </MotionDiv>
             ) : viewMode === "list" ? (
-              <motion.div
+              <MotionDiv
                 key="list"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -726,15 +797,17 @@ export default function OptimizedInventory() {
                   materials={filteredMaterials}
                   inventory={inventory}
                   onEdit={handleEdit}
+                  onConfigure={handleConfigure}
+                  onDelete={handleDeleteRequest}
                 />
-              </motion.div>
+              </MotionDiv>
             ) : (
-              <motion.div
+              <MotionDiv
                 key="grid"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6"
+                className="inventory-card-grid grid gap-5"
               >
                 {filteredMaterials.map((material) => {
                   const item = inventory[material.key] || {
@@ -747,7 +820,7 @@ export default function OptimizedInventory() {
                       key={material.key}
                       material={material}
                       item={item}
-                      isEditing={editingItem === material.key}
+                      isEditing={false}
                       onEdit={handleEdit}
                       onSave={handleSave}
                       onCancel={handleCancel}
@@ -759,12 +832,26 @@ export default function OptimizedInventory() {
                     />
                   );
                 })}
-              </motion.div>
+              </MotionDiv>
             )}
           </AnimatePresence>
         </div>
       </div>
 
+      {editingItem && (
+        <InventoryPriceEditor
+          key={editingItem}
+          material={allMaterials.find(
+            (material) => material.key === editingItem,
+          )}
+          draft={editForm}
+          setDraft={setEditForm}
+          onSave={handleSave}
+          onClose={handleCancel}
+          busy={savingPrices}
+          openerRef={editorOpenerRef}
+        />
+      )}
       {/* ── Modais de Gestão de Materiais ─────────────────────────────── */}
       <AnimatePresence>
         {showMaterialModal && (

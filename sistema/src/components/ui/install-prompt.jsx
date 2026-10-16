@@ -1,75 +1,85 @@
-"use client"
+import { useEffect, useState } from "react";
+import { Download, X } from "lucide-react";
 
-import { useState, useEffect } from "react"
-import { Download, X } from "lucide-react"
-
-export const InstallPrompt = () => {
-  const [deferredPrompt, setDeferredPrompt] = useState(null)
-  const [showPrompt, setShowPrompt] = useState(false)
-
+export function InstallPrompt() {
+  const [prompt, setPrompt] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(false);
   useEffect(() => {
-    const handler = (e) => {
-      e.preventDefault()
-      setDeferredPrompt(e)
-
-      // Check if user hasn't dismissed the prompt before
-      const hasPromptBeenDismissed = localStorage.getItem("pwa-prompt-dismissed")
-      if (!hasPromptBeenDismissed) {
-        setShowPrompt(true)
+    const handler = (event) => {
+      event.preventDefault();
+      let dismissed = false;
+      try {
+        dismissed = localStorage.getItem("pwa-prompt-dismissed") === "true";
+      } catch {
+        /* Preferência opcional. */
       }
-    }
-
-    window.addEventListener("beforeinstallprompt", handler)
-
+      if (!dismissed) setPrompt(event);
+    };
+    const installed = () => setPrompt(null);
+    window.addEventListener("beforeinstallprompt", handler);
+    window.addEventListener("appinstalled", installed);
     return () => {
-      window.removeEventListener("beforeinstallprompt", handler)
+      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("appinstalled", installed);
+    };
+  }, []);
+  const dismiss = () => {
+    setPrompt(null);
+    try {
+      localStorage.setItem("pwa-prompt-dismissed", "true");
+    } catch {
+      /* Preferência opcional. */
     }
-  }, [])
-
-  const handleInstall = async () => {
-    if (!deferredPrompt) return
-
-    deferredPrompt.prompt()
-    const { outcome } = await deferredPrompt.userChoice
-
-    console.log("[v0] User response to install prompt:", outcome)
-
-    setDeferredPrompt(null)
-    setShowPrompt(false)
-    localStorage.setItem("pwa-prompt-dismissed", "true")
-  }
-
-  const handleDismiss = () => {
-    setShowPrompt(false)
-    localStorage.setItem("pwa-prompt-dismissed", "true")
-  }
-
-  if (!showPrompt) return null
-
+  };
+  const install = async () => {
+    if (!prompt || busy) return;
+    setBusy(true);
+    setError(false);
+    try {
+      await prompt.prompt();
+      await prompt.userChoice;
+      dismiss();
+    } catch {
+      setError(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+  if (!prompt) return null;
   return (
-    <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top-2">
-      <div className="flex items-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg px-4 py-3 shadow-lg max-w-sm">
-        <Download className="w-5 h-5 flex-shrink-0" />
-        <div className="flex-1 flex flex-col gap-1">
-          <span className="text-sm font-semibold">Instalar Sistema Império Sucata</span>
-          <span className="text-xs opacity-90">Acesse rapidamente e trabalhe offline</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleInstall}
-            className="px-3 py-1.5 bg-white text-blue-600 rounded-md text-xs font-medium hover:bg-blue-50 transition-colors"
-          >
-            Instalar
-          </button>
-          <button
-            onClick={handleDismiss}
-            className="p-1 hover:bg-white/20 rounded transition-colors"
-            aria-label="Fechar"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+    <aside
+      className="global-notice install-notice"
+      aria-label="Instalar aplicativo"
+    >
+      <Download size={21} aria-hidden="true" />
+      <div>
+        <strong>Instalar Império Sucata</strong>
+        <p>Abra o sistema como aplicativo no computador.</p>
+        {error && (
+          <p role="alert">
+            Não foi possível abrir a instalação. Tente novamente ou use o menu
+            do navegador.
+          </p>
+        )}
       </div>
-    </div>
-  )
+      <button
+        type="button"
+        className="utility-secondary"
+        disabled={busy}
+        onClick={install}
+      >
+        {busy ? "Aguardando…" : "Instalar"}
+      </button>
+      <button
+        type="button"
+        className="utility-icon-button"
+        disabled={busy}
+        onClick={dismiss}
+        aria-label="Dispensar instalação"
+      >
+        <X size={19} />
+      </button>
+    </aside>
+  );
 }

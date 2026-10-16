@@ -22,6 +22,29 @@ const INVENTORY_COLLECTION = "inventory";
 const DAILY_REPORTS_COLLECTION = "daily_reports";
 const LIVE_SUMMARY_COLLECTION = "reports";
 const CUSTOMERS_COLLECTION = "clients";
+const DAILY_CASH_COLLECTION = "daily_cash";
+
+// Converte um Date (ou string "yyyy-MM-dd") para chave de documento "yyyy-MM-dd"
+// usando componentes LOCAIS, evitando o bug de fuso horário (UTC-3) que
+// "volta" um dia ao usar toISOString().
+const toDateKey = (dateInput) => {
+  if (typeof dateInput === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+    return dateInput;
+  }
+  const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+// Retorna a chave "yyyy-MM-dd" do dia anterior a partir de uma chave "yyyy-MM-dd"
+const previousDateKey = (dateKey) => {
+  const [y, m, d] = dateKey.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  date.setDate(date.getDate() - 1);
+  return toDateKey(date);
+};
 
 // Funções para Transações
 export const addTransaction = async (transaction) => {
@@ -1184,7 +1207,7 @@ export const deleteCustomer = async (id) => {
   }
 };
 
-export const subscribeToCustomers = (callback) => {
+export const subscribeToCustomers = (callback, onError) => {
   const q = query(collection(db, CUSTOMERS_COLLECTION), orderBy("nome", "asc"));
   console.log("[v0] subscribeToCustomers: Listener configurado");
   return onSnapshot(q, (querySnapshot) => {
@@ -1202,7 +1225,7 @@ export const subscribeToCustomers = (callback) => {
       `[v0] subscribeToCustomers: ${customers.length} clientes recebidos`,
     );
     callback(customers);
-  });
+  }, (error) => { console.error("[v0] Erro ao sincronizar clientes:", error); onError?.(error); });
 };
 
 export const getCustomerTransactions = async (customerId, customerName) => {
@@ -1469,6 +1492,309 @@ export const deleteMaterialFromInventory = async (key) => {
     return { success: true };
   } catch (error) {
     console.error("[firebaseService] Erro ao remover material:", error);
+    throw error;
+  }
+};
+
+/* ══════════════════════════════════════════════════════════════════
+   CAIXA DIÁRIO
+   Réplica digital da folha de "Movimento do dia" que a cliente usa em
+   papel: caixa inicial + movimentações do dia (compra/venda/despesa,
+   todas as formas de pagamento contam no saldo) + caixa final.
+   As movimentações em si continuam sendo gravadas na coleção
+   TRANSACTIONS_COLLECTION (reaproveitando addTransaction/updateInventoryQuantity
+   já existentes, para não duplicar a baixa/entrada de estoque). O documento
+   em DAILY_CASH_COLLECTION guarda apenas o "Caixa Inicial" de cada dia
+   (automático ou digitado manualmente pela cliente).
+   ══════════════════════════════════════════════════════════════════ */
+
+/**
+ * Soma as movimentações de um dia (a partir da coleção de transações) e
+ * retorna os totais do "Movimento do dia": compras, vendas, despesas, sangrias.
+ * Todas as formas de pagamento entram na conta (decisão confirmada com a cliente).
+ *
+ * "sangria" é uma retirada manual de dinheiro do caixa (não é despesa
+ * operacional e não mexe em estoque) — tratada separadamente para o
+ * histórico ficar claro, mas soma junto com despesas no saldo final.
+ *
+ * Também calcula o resumo de VENDAS por forma de pagamento (PIX, cartão,
+ * dinheiro...), derivado das próprias transações — nunca cadastrado à mão.
+ */
+const sumMovimentosDoDia = (transacoesDoDia) => {
+  let totalCompras = 0;
+  let totalVendas = 0;
+  let totalDespesas = 0;
+  let totalSangrias = 0;
+  const vendasPorFormaPagamento = {};
+
+  for (const t of transacoesDoDia) {
+    const valor = Number(t.valorTotal) || 0;
+    if (t.tipo === "compra") totalCompras += valor;
+    else if (t.tipo === "venda") {
+      totalVendas += valor;
+      const forma = t.formaPagamento || "dinheiro";
+      vendasPorFormaPagamento[forma] =
+        (vendasPorFormaPagamento[forma] || 0) + valor;
+    } else if (t.tipo === "despesa") totalDespesas += valor;
+    else if (t.tipo === "sangria") totalSangrias += valor;
+  }
+
+  return {
+    totalCompras,
+    totalVendas,
+    totalDespesas,
+    totalSangrias,
+    vendasPorFormaPagamento,
+  };
+};
+
+/**
+ * Calcula o fechamento de caixa de um dia específico: busca o caixa inicial
+ * salvo (ou 0, se ainda não existir) e soma as movimentações desse dia.
+ * saldoFinal = caixaInicial + totalVendas - totalCompras - totalDespesas
+ * (compra = dinheiro saindo para pagar o fornecedor; venda = dinheiro entrando).
+ */
+export const calculateCaixaDia = async (dateInput) => {
+  try {
+    const dateKey = toDateKey(dateInput);
+
+    const [cashDocSnap, transacoesDoDia] = await Promise.all([
+      getDoc(doc(db, DAILY_CASH_COLLECTION, dateKey)),
+      getTransactionsByPeriod(dateKey, dateKey),
+    ]);
+
+    const cashDoc = cashDocSnap.exists() ? cashDocSnap.data() : null;
+    const modo = cashDoc?.modo === "manual" ? "manual" : "auto";
+    const caixaInicialManual =
+      typeof cashDoc?.caixaInicialManual === "number"
+        ? cashDoc.caixaInicialManual
+        : null;
+    const caixaInicialAuto =
+      typeof cashDoc?.caixaInicialAuto === "number"
+        ? cashDoc.caixaInicialAuto
+        : 0;
+
+    const caixaInicial =
+      modo === "manual" && caixaInicialManual !== null
+        ? caixaInicialManual
+        : caixaInicialAuto;
+
+    const {
+      totalCompras,
+      totalVendas,
+      totalDespesas,
+      totalSangrias,
+      vendasPorFormaPagamento,
+    } = sumMovimentosDoDia(transacoesDoDia);
+
+    const saldoFinal =
+      caixaInicial + totalVendas - totalCompras - totalDespesas - totalSangrias;
+
+    // Fechamento do dia (contagem física do caixa), se já tiver sido feito.
+    const fechado = cashDoc?.fechado === true;
+    const valorContado =
+      typeof cashDoc?.valorContado === "number" ? cashDoc.valorContado : null;
+    const fechadoPor = cashDoc?.fechadoPor || null;
+    const fechadoEm = cashDoc?.fechadoEm?.toDate
+      ? cashDoc.fechadoEm.toDate()
+      : cashDoc?.fechadoEm || null;
+    const diferencaFechamento =
+      valorContado !== null
+        ? Number((valorContado - saldoFinal).toFixed(2))
+        : null;
+
+    return {
+      dateKey,
+      modo,
+      caixaInicialAuto,
+      caixaInicialManual,
+      caixaInicial,
+      totalCompras,
+      totalVendas,
+      totalDespesas,
+      totalSangrias,
+      vendasPorFormaPagamento,
+      saldoFinal,
+      diferenca:
+        caixaInicialManual !== null ? caixaInicialManual - caixaInicialAuto : 0,
+      fechado,
+      valorContado,
+      fechadoPor,
+      fechadoEm,
+      diferencaFechamento,
+      movimentos: transacoesDoDia,
+    };
+  } catch (error) {
+    console.error("[firebaseService] Erro ao calcular caixa do dia:", error);
+    throw error;
+  }
+};
+
+/**
+ * Busca (ou cria, se ainda não existir) o registro de Caixa Diário de uma data.
+ * O "Caixa Inicial" automático puxa o saldo final calculado do dia anterior —
+ * exatamente como a cliente faz no papel, transportando o saldo de uma folha
+ * para a próxima.
+ */
+export const getOrInitDailyCash = async (dateInput) => {
+  try {
+    const dateKey = toDateKey(dateInput);
+    const docRef = doc(db, DAILY_CASH_COLLECTION, dateKey);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      const prevKey = previousDateKey(dateKey);
+      const prevFechamento = await calculateCaixaDia(prevKey);
+      const caixaInicialAuto = prevFechamento.saldoFinal || 0;
+
+      await setDoc(docRef, {
+        dateKey,
+        caixaInicialAuto,
+        caixaInicialManual: null,
+        modo: "auto",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      console.log(
+        `[firebaseService] Caixa Diário criado para ${dateKey}: inicial automático = ${caixaInicialAuto} (puxado de ${prevKey})`,
+      );
+    }
+
+    return await calculateCaixaDia(dateKey);
+  } catch (error) {
+    console.error("[firebaseService] Erro ao obter/criar caixa diário:", error);
+    throw error;
+  }
+};
+
+/**
+ * Define manualmente o valor do "Caixa Inicial" de um dia (permite comparar
+ * com o valor automático puxado do dia anterior). Passar `null` volta o
+ * dia a usar o valor automático.
+ */
+export const setCaixaInicialManual = async (dateInput, valor) => {
+  try {
+    const dateKey = toDateKey(dateInput);
+    const docRef = doc(db, DAILY_CASH_COLLECTION, dateKey);
+    const docSnap = await getDoc(docRef);
+
+    // Garante que o documento (com o valor automático) já existe antes de sobrepor
+    if (!docSnap.exists()) {
+      await getOrInitDailyCash(dateKey);
+    }
+
+    const usandoManual = valor !== null && valor !== undefined && valor !== "";
+
+    await updateDoc(docRef, {
+      caixaInicialManual: usandoManual ? Number(valor) : null,
+      modo: usandoManual ? "manual" : "auto",
+      updatedAt: new Date(),
+    });
+
+    console.log(
+      `[firebaseService] Caixa inicial de ${dateKey} definido como ${usandoManual ? "manual" : "automático"}${usandoManual ? `: R$ ${valor}` : ""}`,
+    );
+
+    return await calculateCaixaDia(dateKey);
+  } catch (error) {
+    console.error(
+      "[firebaseService] Erro ao definir caixa inicial manual:",
+      error,
+    );
+    throw error;
+  }
+};
+
+/**
+ * Fecha o caixa de um dia: grava o valor contado fisicamente na gaveta,
+ * quem fez a contagem, e o horário. A diferença em relação ao saldo
+ * esperado é calculada dinamicamente em calculateCaixaDia (não é gravada
+ * fixa, pois se uma movimentação do dia for editada/excluída depois, a
+ * diferença precisa recalcular sozinha).
+ */
+export const fecharCaixaDia = async (dateInput, { valorContado, usuario }) => {
+  try {
+    const dateKey = toDateKey(dateInput);
+    const docRef = doc(db, DAILY_CASH_COLLECTION, dateKey);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      await getOrInitDailyCash(dateKey);
+    }
+
+    await updateDoc(docRef, {
+      valorContado: Number(valorContado),
+      fechado: true,
+      fechadoPor: usuario || null,
+      fechadoEm: new Date(),
+      updatedAt: new Date(),
+    });
+
+    console.log(
+      `[firebaseService] Caixa de ${dateKey} fechado por "${usuario || "—"}" com valor contado R$ ${valorContado}`,
+    );
+
+    return await calculateCaixaDia(dateKey);
+  } catch (error) {
+    console.error("[firebaseService] Erro ao fechar caixa do dia:", error);
+    throw error;
+  }
+};
+
+/**
+ * Reabre um caixa já fechado (permite corrigir um lançamento esquecido).
+ * Mantém o último valor contado salvo como histórico, apenas tira o dia
+ * do estado "fechado".
+ */
+export const reabrirCaixaDia = async (dateInput) => {
+  try {
+    const dateKey = toDateKey(dateInput);
+    const docRef = doc(db, DAILY_CASH_COLLECTION, dateKey);
+
+    await updateDoc(docRef, {
+      fechado: false,
+      updatedAt: new Date(),
+    });
+
+    console.log(`[firebaseService] Caixa de ${dateKey} reaberto`);
+
+    return await calculateCaixaDia(dateKey);
+  } catch (error) {
+    console.error("[firebaseService] Erro ao reabrir caixa do dia:", error);
+    throw error;
+  }
+};
+
+/**
+ * Busca o fechamento do Caixa Diário para um intervalo de datas (histórico),
+ * útil para uma futura lista/relatório de "movimentos do dia" anteriores.
+ */
+export const getCaixaDiarioPeriodo = async (startDateKey, endDateKey) => {
+  try {
+    const start = toDateKey(startDateKey);
+    const end = toDateKey(endDateKey);
+    const dias = [];
+    let cursor = start;
+    // Percorre dia a dia dentro do intervalo (uso esperado: poucos dias por vez)
+    while (cursor <= end) {
+      dias.push(cursor);
+      cursor = toDateKey(
+        (() => {
+          const [y, m, d] = cursor.split("-").map(Number);
+          const nd = new Date(y, m - 1, d);
+          nd.setDate(nd.getDate() + 1);
+          return nd;
+        })(),
+      );
+    }
+    const resultados = await Promise.all(dias.map((k) => calculateCaixaDia(k)));
+    return resultados;
+  } catch (error) {
+    console.error(
+      "[firebaseService] Erro ao buscar caixa diário por período:",
+      error,
+    );
     throw error;
   }
 };

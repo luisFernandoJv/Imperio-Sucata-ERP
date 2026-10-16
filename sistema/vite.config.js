@@ -1,23 +1,25 @@
-import { defineConfig } from "vite"
-import react from "@vitejs/plugin-react"
-import { VitePWA } from "vite-plugin-pwa"
-import path from "path"
-import { fileURLToPath } from "url"
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { VitePWA } from "vite-plugin-pwa";
+import path from "path";
+import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default defineConfig({
   plugins: [
     react(),
     VitePWA({
       registerType: "autoUpdate",
+      injectRegister: null,
+      devOptions: { enabled: false },
       includeAssets: [
-        "favicon.ico", 
-        "robots.txt", 
+        "favicon.ico",
+        "robots.txt",
         "apple-touch-icon.png",
         "favicon_io/ico.svg",
-        "favicon_io/*.png"
+        "favicon_io/*.png",
       ],
       manifest: {
         name: "Império Sucata - Sistema de Gestão",
@@ -36,43 +38,45 @@ export default defineConfig({
             src: "/favicon_io/android-chrome-192x192.png",
             sizes: "192x192",
             type: "image/png",
-            purpose: "any"
+            purpose: "any",
           },
           {
             src: "/favicon_io/android-chrome-512x512.png",
             sizes: "512x512",
             type: "image/png",
-            purpose: "any"
+            purpose: "any",
           },
           {
             src: "/favicon_io/android-chrome-512x512.png",
             sizes: "512x512",
             type: "image/png",
-            purpose: "maskable"
+            purpose: "maskable",
           },
           {
             src: "/favicon_io/apple-touch-icon.png",
             sizes: "180x180",
             type: "image/png",
-            purpose: "any"
-          }
+            purpose: "any",
+          },
         ],
         screenshots: [
           {
             src: "/screenshots/desktop.png",
             sizes: "1280x720",
             type: "image/png",
-            form_factor: "wide"
+            form_factor: "wide",
           },
           {
             src: "/screenshots/mobile.png",
             sizes: "750x1334",
             type: "image/png",
-            form_factor: "narrow"
-          }
-        ]
+            form_factor: "narrow",
+          },
+        ],
       },
       workbox: {
+        navigateFallbackDenylist: [/^\/recuperar\.html$/],
+        globIgnores: ["**/recuperar.html"],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,webp,jpg,jpeg}"],
         runtimeCaching: [
           {
@@ -139,11 +143,11 @@ export default defineConfig({
   },
   // Otimizações de Build
   build: {
-    target: 'esnext',
-    minify: 'terser', 
+    target: "esnext",
+    minify: "terser",
     terserOptions: {
       compress: {
-        drop_console: true, 
+        drop_console: true,
         drop_debugger: true,
       },
     },
@@ -157,15 +161,15 @@ export default defineConfig({
         },
         // Otimizar nomes de arquivos para cache
         assetFileNames: (assetInfo) => {
-          const info = assetInfo.name.split('.')
-          const ext = info[info.length - 1]
+          const info = assetInfo.name.split(".");
+          const ext = info[info.length - 1];
           if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext)) {
-            return `assets/images/[name]-[hash][extname]`
+            return `assets/images/[name]-[hash][extname]`;
           }
           if (/woff2?|ttf|eot/i.test(ext)) {
-            return `assets/fonts/[name]-[hash][extname]`
+            return `assets/fonts/[name]-[hash][extname]`;
           }
-          return `assets/[name]-[hash][extname]`
+          return `assets/[name]-[hash][extname]`;
         },
       },
     },
@@ -190,4 +194,4 @@ export default defineConfig({
     host: true,
     open: true,
   },
-})
+});

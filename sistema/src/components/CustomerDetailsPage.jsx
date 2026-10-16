@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   ArrowLeft,
   Calendar,
@@ -36,7 +36,9 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
-import { useToast } from "./ui/use-toast";
+import { FormFeedback } from "./ui/form-feedback";
+import { useFormFeedback } from "../hooks/useFormFeedback";
+import "../styles/customer-workspace.css";
 import { getCustomerTransactions } from "../lib/firebaseService";
 import * as reportGenerators from "../utils/reportGenerators";
 
@@ -110,28 +112,37 @@ const CustomerDetailsPage = ({ customer, onBack }) => {
   const [dateFilter, setDateFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("desc");
   const [showFilters, setShowFilters] = useState(false);
-  const { toast } = useToast();
+  const { toast, feedback, dismiss } = useFormFeedback();
+  const [loadError, setLoadError] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const requestRef = useRef(0);
+  const headingRef = useRef(null);
 
-  useEffect(() => {
-    fetchTransactions();
-  }, [customer]);
-
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
+    const request = ++requestRef.current;
     setLoading(true);
+    setLoadError(false);
     try {
       const data = await getCustomerTransactions(customer.id, customer.nome);
-      setTransactions(data);
-    } catch (error) {
-      console.error("Erro ao buscar transações:", error);
-      toast({
-        title: "Erro ao carregar transações",
-        description: "Não foi possível carregar o histórico completo.",
-        variant: "destructive",
-      });
+      if (request === requestRef.current) {
+        setTransactions(data);
+        setHasLoaded(true);
+      }
+    } catch {
+      if (request === requestRef.current) setLoadError(true);
     } finally {
-      setLoading(false);
+      if (request === requestRef.current) setLoading(false);
     }
-  };
+  }, [customer.id, customer.nome]);
+  useEffect(() => {
+    fetchTransactions();
+    return () => {
+      requestRef.current += 1;
+    };
+  }, [fetchTransactions]);
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, [hasLoaded]);
 
   // ── Estatísticas centrais calculadas pelo classificador ──
   const stats = useMemo(() => {
@@ -334,7 +345,9 @@ const CustomerDetailsPage = ({ customer, onBack }) => {
     if (navigator.share) {
       try {
         await navigator.share(shareData);
-      } catch {}
+      } catch {
+        /* Cancelar o compartilhamento não altera o histórico. */
+      }
     } else {
       toast({ title: "Compartilhamento não disponível" });
     }
@@ -355,15 +368,59 @@ const CustomerDetailsPage = ({ customer, onBack }) => {
     slate: "bg-slate-100 text-slate-600 border-slate-300",
   };
 
+  if (!hasLoaded)
+    return (
+      <section className="customer-details-workspace space-y-5">
+        <Button type="button" variant="outline" onClick={onBack}>
+          <ArrowLeft size={16} />
+          Voltar para clientes
+        </Button>
+        <h1
+          id="customer-detail-heading"
+          ref={headingRef}
+          tabIndex={-1}
+          className="text-2xl font-bold text-slate-900"
+        >
+          {customer.nome}
+        </h1>
+        {loadError ? (
+          <div role="alert" className="customer-load-alert">
+            Não foi possível carregar o histórico.{" "}
+            <button type="button" onClick={fetchTransactions}>
+              Tentar novamente
+            </button>
+          </div>
+        ) : (
+          <p
+            role="status"
+            className="rounded-xl border border-slate-200 bg-white p-6 text-slate-600"
+          >
+            Carregando histórico do cliente…
+          </p>
+        )}
+      </section>
+    );
+
   // ─────────────── RENDER ──────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 p-4 md:p-6 space-y-6 animate-in fade-in duration-500">
+    <div className="customer-details-workspace space-y-6">
+      <FormFeedback feedback={feedback} onDismiss={dismiss} />
+      {loadError && (
+        <div role="alert" className="customer-load-alert">
+          Não foi possível atualizar o histórico. Os dados anteriores foram
+          mantidos.{" "}
+          <button type="button" onClick={fetchTransactions}>
+            Tentar novamente
+          </button>
+        </div>
+      )}
       {/* ── Header ── */}
       <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
         <div className="flex flex-col lg:flex-row lg:items-center gap-4">
           <Button
             variant="ghost"
             size="icon"
+            aria-label="Voltar para clientes"
             onClick={onBack}
             className="rounded-full hover:bg-slate-100 self-start"
           >
@@ -374,7 +431,12 @@ const CustomerDetailsPage = ({ customer, onBack }) => {
               {customer.nome.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+              <h1
+                id="customer-detail-heading"
+                ref={headingRef}
+                tabIndex={-1}
+                className="text-3xl font-black text-slate-900 tracking-tight"
+              >
                 {customer.nome}
               </h1>
               <p className="text-slate-500 font-medium flex items-center gap-2">
@@ -385,6 +447,8 @@ const CustomerDetailsPage = ({ customer, onBack }) => {
           </div>
           <div className="flex flex-wrap gap-2">
             <Button
+              disabled={loading || loadError}
+              aria-label="Exportar PDF do histórico"
               onClick={handleExportPDF}
               className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl h-11 px-6 shadow-lg gap-2"
             >
@@ -392,6 +456,8 @@ const CustomerDetailsPage = ({ customer, onBack }) => {
               <span className="hidden sm:inline">Exportar PDF</span>
             </Button>
             <Button
+              aria-label="Imprimir histórico"
+              disabled={loading || loadError}
               onClick={handlePrint}
               variant="outline"
               className="border-2 border-slate-300 hover:bg-slate-100 font-bold rounded-xl h-11 px-4"
@@ -399,6 +465,8 @@ const CustomerDetailsPage = ({ customer, onBack }) => {
               <Printer className="h-5 w-5" />
             </Button>
             <Button
+              aria-label="Compartilhar resumo"
+              disabled={loading || loadError}
               onClick={handleShare}
               variant="outline"
               className="border-2 border-slate-300 hover:bg-slate-100 font-bold rounded-xl h-11 px-4"
@@ -406,6 +474,8 @@ const CustomerDetailsPage = ({ customer, onBack }) => {
               <Share2 className="h-5 w-5" />
             </Button>
             <Button
+              aria-label="Atualizar histórico"
+              disabled={loading}
               onClick={fetchTransactions}
               variant="outline"
               className="border-2 border-slate-300 hover:bg-slate-100 font-bold rounded-xl h-11 px-4"
@@ -420,7 +490,7 @@ const CustomerDetailsPage = ({ customer, onBack }) => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Perfil do Cliente */}
         <Card className="lg:col-span-1 border-slate-200 shadow-lg bg-white">
-          <CardHeader className="pb-3 bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-t-lg">
+          <CardHeader className="customer-profile-header pb-3 bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-t-lg">
             <CardTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
               <User className="h-4 w-4" /> Dados do Cliente
             </CardTitle>
@@ -547,7 +617,7 @@ const CustomerDetailsPage = ({ customer, onBack }) => {
 
             {/* Barra proporção aumentou vs diminuiu */}
             <div className="p-5 bg-white">
-              <div className="flex gap-4 text-xs font-bold text-slate-500 uppercase mb-2">
+              <div className="customer-debt-legend flex gap-4 text-xs font-bold text-slate-500 uppercase mb-2">
                 <span className="flex items-center gap-1">
                   <span className="inline-block w-3 h-3 rounded-full bg-red-400"></span>{" "}
                   Aumentou dívida
@@ -686,7 +756,7 @@ const CustomerDetailsPage = ({ customer, onBack }) => {
                       return (
                         <div
                           key={i}
-                          className="flex-1 flex flex-col items-center gap-1 group relative"
+                          className="customer-debt-bar flex-1 flex flex-col items-center gap-1 group relative"
                         >
                           <div
                             className={`w-full rounded-t-sm transition-all duration-300 ${item.saldo > 0 ? "bg-red-400" : "bg-emerald-400"}`}
@@ -732,13 +802,17 @@ const CustomerDetailsPage = ({ customer, onBack }) => {
                 Cada linha mostra como impacta a dívida do cliente
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="customer-history-tools flex items-center gap-3">
               <Badge className="bg-slate-800 text-slate-300 border-slate-700 px-4 py-2 text-sm">
                 {filteredTransactions.length} de {transactions.length} registros
               </Badge>
               <Button
                 variant="outline"
                 size="sm"
+                aria-expanded={showFilters}
+                aria-controls={
+                  showFilters ? "customer-history-filters" : undefined
+                }
                 onClick={() => setShowFilters(!showFilters)}
                 className="bg-white/10 border-white/20 text-white hover:bg-white/20"
               >
@@ -753,15 +827,22 @@ const CustomerDetailsPage = ({ customer, onBack }) => {
 
           {/* Filtros expansíveis */}
           {showFilters && (
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-white/5 rounded-xl border border-white/10">
+            <div
+              id="customer-history-filters"
+              className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-white/5 rounded-xl border border-white/10"
+            >
               <div className="space-y-2">
-                <label className="text-xs text-slate-300 font-bold uppercase">
+                <label
+                  htmlFor="customer-history-search"
+                  className="text-xs text-slate-300 font-bold uppercase"
+                >
                   Buscar
                 </label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
                     type="text"
+                    id="customer-history-search"
                     placeholder="Material, descrição..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -770,10 +851,14 @@ const CustomerDetailsPage = ({ customer, onBack }) => {
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-xs text-slate-300 font-bold uppercase">
+                <label
+                  htmlFor="customer-history-impact"
+                  className="text-xs text-slate-300 font-bold uppercase"
+                >
                   Impacto na Dívida
                 </label>
                 <select
+                  id="customer-history-impact"
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
                   className="w-full h-10 px-3 rounded-lg bg-white/10 border border-white/20 text-white text-sm"
@@ -799,10 +884,14 @@ const CustomerDetailsPage = ({ customer, onBack }) => {
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-xs text-slate-300 font-bold uppercase">
+                <label
+                  htmlFor="customer-history-period"
+                  className="text-xs text-slate-300 font-bold uppercase"
+                >
                   Período
                 </label>
                 <select
+                  id="customer-history-period"
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
                   className="w-full h-10 px-3 rounded-lg bg-white/10 border border-white/20 text-white text-sm"
@@ -828,10 +917,14 @@ const CustomerDetailsPage = ({ customer, onBack }) => {
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-xs text-slate-300 font-bold uppercase">
+                <label
+                  htmlFor="customer-history-order"
+                  className="text-xs text-slate-300 font-bold uppercase"
+                >
                   Ordenar
                 </label>
                 <select
+                  id="customer-history-order"
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value)}
                   className="w-full h-10 px-3 rounded-lg bg-white/10 border border-white/20 text-white text-sm"
@@ -888,28 +981,51 @@ const CustomerDetailsPage = ({ customer, onBack }) => {
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div
+              className="customer-history-table overflow-x-auto"
+              role="region"
+              aria-label="Histórico de movimentações, com rolagem"
+              tabIndex={0}
+            >
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-gradient-to-r from-slate-50 to-blue-50 border-b-2 border-slate-200">
-                    <th className="py-4 px-6 text-[10px] uppercase font-black text-slate-600 tracking-tight">
+                    <th
+                      scope="col"
+                      className="py-4 px-6 text-[10px] uppercase font-black text-slate-600 tracking-tight"
+                    >
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" /> Data
                       </div>
                     </th>
-                    <th className="py-4 px-6 text-[10px] uppercase font-black text-slate-600 tracking-tight">
+                    <th
+                      scope="col"
+                      className="py-4 px-6 text-[10px] uppercase font-black text-slate-600 tracking-tight"
+                    >
                       Tipo
                     </th>
-                    <th className="py-4 px-6 text-[10px] uppercase font-black text-slate-600 tracking-tight">
+                    <th
+                      scope="col"
+                      className="py-4 px-6 text-[10px] uppercase font-black text-slate-600 tracking-tight"
+                    >
                       Descrição
                     </th>
-                    <th className="py-4 px-6 text-[10px] uppercase font-black text-slate-600 tracking-tight text-right">
+                    <th
+                      scope="col"
+                      className="py-4 px-6 text-[10px] uppercase font-black text-slate-600 tracking-tight text-right"
+                    >
                       Quantidade
                     </th>
-                    <th className="py-4 px-6 text-[10px] uppercase font-black text-slate-600 tracking-tight text-right">
+                    <th
+                      scope="col"
+                      className="py-4 px-6 text-[10px] uppercase font-black text-slate-600 tracking-tight text-right"
+                    >
                       Valor
                     </th>
-                    <th className="py-4 px-6 text-[10px] uppercase font-black text-slate-600 tracking-tight text-right">
+                    <th
+                      scope="col"
+                      className="py-4 px-6 text-[10px] uppercase font-black text-slate-600 tracking-tight text-right"
+                    >
                       <div className="flex items-center justify-end gap-1">
                         <DollarSign className="h-3.5 w-3.5" /> Saldo Após
                       </div>
@@ -1065,6 +1181,8 @@ const CustomerDetailsPage = ({ customer, onBack }) => {
                 </div>
               </div>
               <Button
+                disabled={loading || loadError}
+                aria-label="Exportar PDF do histórico"
                 onClick={handleExportPDF}
                 variant="outline"
                 className="border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-bold"

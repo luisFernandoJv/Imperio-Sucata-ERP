@@ -737,6 +737,14 @@ const Inventory = () => {
 
     // Outros Materiais
     {
+      key: "sucata_miuda",
+      name: "Sucata Miúda",
+      category: "outros",
+      color: "bg-gray-200",
+      icon: "🔩",
+      minStock: 30,
+    },
+    {
       key: "panela",
       name: "Panela",
       category: "outros",

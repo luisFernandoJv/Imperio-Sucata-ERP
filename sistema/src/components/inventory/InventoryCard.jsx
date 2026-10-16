@@ -2,18 +2,7 @@
 
 import { memo } from "react";
 import { motion } from "framer-motion";
-import {
-  Edit,
-  Save,
-  X,
-  AlertTriangle,
-  TrendingUp,
-  TrendingDown,
-  Package,
-  AlertCircle,
-  Settings,
-  Trash2,
-} from "lucide-react";
+import { Edit, AlertTriangle, Settings, Trash2 } from "lucide-react";
 import {
   formatCurrency,
   formatWeight,
@@ -23,6 +12,8 @@ import { calculateMargin } from "../../utils/calculations";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Badge } from "../ui/badge";
+
+const MotionDiv = motion.div;
 
 export const InventoryCard = memo(
   ({
@@ -69,7 +60,7 @@ export const InventoryCard = memo(
           };
 
     return (
-      <motion.div
+      <MotionDiv
         layout
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -77,13 +68,14 @@ export const InventoryCard = memo(
       >
         {/* Botões de Ação Flutuantes */}
         {!isEditing && (
-          <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+          <div className="inventory-card-actions absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
             {/* Editar preços */}
             <Button
               variant="secondary"
               size="icon"
               onClick={() => onEdit(material.key)}
               title="Editar preços"
+              aria-label={`Editar preços de ${material.name}`}
               className="h-8 w-8 rounded-full shadow-sm bg-white hover:bg-blue-50 hover:text-blue-600 border border-slate-200"
             >
               <Edit className="h-3.5 w-3.5" />
@@ -95,6 +87,7 @@ export const InventoryCard = memo(
                 size="icon"
                 onClick={() => onConfigure(material)}
                 title="Configurar material"
+                aria-label={`Configurar material ${material.name}`}
                 className="h-8 w-8 rounded-full shadow-sm bg-white hover:bg-purple-50 hover:text-purple-600 border border-slate-200"
               >
                 <Settings className="h-3.5 w-3.5" />
@@ -107,6 +100,7 @@ export const InventoryCard = memo(
                 size="icon"
                 onClick={() => onDelete(material)}
                 title="Remover material"
+                aria-label={`Remover material ${material.name}`}
                 className="h-8 w-8 rounded-full shadow-sm bg-white hover:bg-red-50 hover:text-red-600 border border-slate-200"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -214,7 +208,7 @@ export const InventoryCard = memo(
                 </div>
 
                 <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner">
-                  <motion.div
+                  <MotionDiv
                     initial={{ width: 0 }}
                     animate={{
                       width: `${Math.min(Math.max((qtd / (minStock * 4)) * 100, 5), 100)}%`,
@@ -270,7 +264,7 @@ export const InventoryCard = memo(
             </>
           )}
         </div>
-      </motion.div>
+      </MotionDiv>
     );
   },
 );

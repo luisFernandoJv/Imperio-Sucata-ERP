@@ -1,0 +1,703 @@
+{
+  "data": "2026-10-16",
+  "escopo": "npm audit --omit=dev --json em sistema; relatório de dependências, não prova de exploração; backend e dependências de validação fora deste levantamento",
+  "contagem": {
+    "info": 0,
+    "low": 0,
+    "moderate": 15,
+    "high": 4,
+    "critical": 3,
+    "total": 22
+  },
+  "pacotes": [
+    {
+      "pacote": "@firebase/auth",
+      "direta": false,
+      "gravidade": "moderate",
+      "versao_instalada": null,
+      "correcao_sugerida": {
+        "name": "firebase",
+        "version": "13.0.0",
+        "isSemVerMajor": true
+      },
+      "avisos": []
+    },
+    {
+      "pacote": "@firebase/auth-compat",
+      "direta": false,
+      "gravidade": "moderate",
+      "versao_instalada": "0.5.14",
+      "correcao_sugerida": {
+        "name": "firebase",
+        "version": "13.0.0",
+        "isSemVerMajor": true
+      },
+      "avisos": []
+    },
+    {
+      "pacote": "@firebase/firestore",
+      "direta": false,
+      "gravidade": "moderate",
+      "versao_instalada": "4.7.3",
+      "correcao_sugerida": {
+        "name": "firebase",
+        "version": "13.0.0",
+        "isSemVerMajor": true
+      },
+      "avisos": []
+    },
+    {
+      "pacote": "@firebase/firestore-compat",
+      "direta": false,
+      "gravidade": "moderate",
+      "versao_instalada": "0.3.38",
+      "correcao_sugerida": {
+        "name": "firebase",
+        "version": "13.0.0",
+        "isSemVerMajor": true
+      },
+      "avisos": []
+    },
+    {
+      "pacote": "@firebase/functions",
+      "direta": false,
+      "gravidade": "moderate",
+      "versao_instalada": "0.11.8",
+      "correcao_sugerida": {
+        "name": "firebase",
+        "version": "13.0.0",
+        "isSemVerMajor": true
+      },
+      "avisos": []
+    },
+    {
+      "pacote": "@firebase/functions-compat",
+      "direta": false,
+      "gravidade": "moderate",
+      "versao_instalada": "0.3.14",
+      "correcao_sugerida": {
+        "name": "firebase",
+        "version": "13.0.0",
+        "isSemVerMajor": true
+      },
+      "avisos": []
+    },
+    {
+      "pacote": "@firebase/storage",
+      "direta": false,
+      "gravidade": "moderate",
+      "versao_instalada": "0.13.2",
+      "correcao_sugerida": {
+        "name": "firebase",
+        "version": "13.0.0",
+        "isSemVerMajor": true
+      },
+      "avisos": []
+    },
+    {
+      "pacote": "@firebase/storage-compat",
+      "direta": false,
+      "gravidade": "moderate",
+      "versao_instalada": "0.3.12",
+      "correcao_sugerida": {
+        "name": "firebase",
+        "version": "13.0.0",
+        "isSemVerMajor": true
+      },
+      "avisos": []
+    },
+    {
+      "pacote": "@grpc/grpc-js",
+      "direta": false,
+      "gravidade": "high",
+      "versao_instalada": "1.9.15",
+      "correcao_sugerida": true,
+      "avisos": [
+        {
+          "titulo": "@grpc/grpc-js: A malformed request can cause a server crash",
+          "url": "https://github.com/advisories/GHSA-5375-pq7m-f5r2",
+          "gravidade": "high",
+          "intervalo": "<1.9.16"
+        },
+        {
+          "titulo": "@grpc/grpc-js: An incoming malformed compressed message can cause a client or server crash",
+          "url": "https://github.com/advisories/GHSA-99f4-grh7-6pcq",
+          "gravidade": "high",
+          "intervalo": "<1.9.16"
+        },
+        {
+          "titulo": "@grpc/grpc-js: In certain configurations, getAuthContext can return unauthorized certificates as though they were authorized",
+          "url": "https://github.com/advisories/GHSA-m9gg-hp2v-232j",
+          "gravidade": "high",
+          "intervalo": "<1.13.6"
+        },
+        {
+          "titulo": "@grpc/grpc-js: The server transmits some error messages thrown by method handlers to the client in status messages",
+          "url": "https://github.com/advisories/GHSA-f596-whhp-79r4",
+          "gravidade": "low",
+          "intervalo": "<1.13.6"
+        }
+      ]
+    },
+    {
+      "pacote": "@protobufjs/utf8",
+      "direta": false,
+      "gravidade": "moderate",
+      "versao_instalada": "1.1.0",
+      "correcao_sugerida": true,
+      "avisos": [
+        {
+          "titulo": "protobufjs has overlong UTF-8 decoding",
+          "url": "https://github.com/advisories/GHSA-q6x5-8v7m-xcrf",
+          "gravidade": "moderate",
+          "intervalo": "<=1.1.0"
+        }
+      ]
+    },
+    {
+      "pacote": "@remix-run/router",
+      "direta": false,
+      "gravidade": "moderate",
+      "versao_instalada": "1.23.2",
+      "correcao_sugerida": true,
+      "avisos": [
+        {
+          "titulo": "React Router's same-origin redirect with path starting // causes open redirect via protocol-relative URL reinterpretation",
+          "url": "https://github.com/advisories/GHSA-2j2x-hqr9-3h42",
+          "gravidade": "moderate",
+          "intervalo": ">=1.3.0 <1.23.3"
+        }
+      ]
+    },
+    {
+      "pacote": "dompurify",
+      "direta": false,
+      "gravidade": "moderate",
+      "versao_instalada": "3.3.1",
+      "correcao_sugerida": true,
+      "avisos": [
+        {
+          "titulo": "DOMPurify contains a Cross-site Scripting vulnerability",
+          "url": "https://github.com/advisories/GHSA-v2wj-7wpq-c8vv",
+          "gravidade": "moderate",
+          "intervalo": ">=3.1.3 <=3.3.1"
+        },
+        {
+          "titulo": "DOMPurify: FORBID_TAGS bypassed by function-based ADD_TAGS predicate (asymmetry with FORBID_ATTR fix)",
+          "url": "https://github.com/advisories/GHSA-h7mw-gpvr-xq4m",
+          "gravidade": "moderate",
+          "intervalo": "<3.4.0"
+        },
+        {
+          "titulo": "DOMPurify has a SAFE_FOR_TEMPLATES bypass in RETURN_DOM mode",
+          "url": "https://github.com/advisories/GHSA-crv5-9vww-q3g8",
+          "gravidade": "moderate",
+          "intervalo": ">=1.0.10 <3.4.0"
+        },
+        {
+          "titulo": "DOMPurify: Prototype Pollution to XSS Bypass via CUSTOM_ELEMENT_HANDLING Fallback",
+          "url": "https://github.com/advisories/GHSA-v9jr-rg53-9pgp",
+          "gravidade": "moderate",
+          "intervalo": ">=3.0.1 <3.4.0"
+        },
+        {
+          "titulo": "DOMPurify: Cross-realm IN_PLACE sanitization leaves executable markup intact via realm-bound `instanceof` checks",
+          "url": "https://github.com/advisories/GHSA-hpcv-96wg-7vj8",
+          "gravidade": "moderate",
+          "intervalo": "<=3.4.5"
+        },
+        {
+          "titulo": "DOMPurify: IN_PLACE mode preserves attributes of a clobbered root element, allowing XSS via attacker-controlled root DOM",
+          "url": "https://github.com/advisories/GHSA-r47g-fvhr-h676",
+          "gravidade": "moderate",
+          "intervalo": "<=3.4.5"
+        },
+        {
+          "titulo": "DOMPurify IN_PLACE Sanitization Bypass via Attached Shadow Root Inside <template>.content",
+          "url": "https://github.com/advisories/GHSA-rp9w-3fw7-7cwq",
+          "gravidade": "moderate",
+          "intervalo": "<=3.4.6"
+        },
+        {
+          "titulo": "DOMPurify: Permanent `ALLOWED_ATTR` pollution via `setConfig()` bypassing the hook clone-guard (incomplete fix of the 3.4.7 hook-pollution patch)",
+          "url": "https://github.com/advisories/GHSA-cmwh-pvxp-8882",
+          "gravidade": "moderate",
+          "intervalo": "<=3.4.10"
+        },
+        {
+          "titulo": "DOMPurify: Trusted Types policy survives `clearConfig()` and can poison later `RETURN_TRUSTED_TYPE` output",
+          "url": "https://github.com/advisories/GHSA-vxr8-fq34-vvx9",
+          "gravidade": "low",
+          "intervalo": "<3.4.9"
+        },
+        {
+          "titulo": "DOMPurify: SAFE_FOR_TEMPLATES bypass - template expressions survive sanitization inside <template> content when using DOM output modes",
+          "url": "https://github.com/advisories/GHSA-gvmj-g25r-r7wr",
+          "gravidade": "low",
+          "intervalo": ">=3.0.0 <=3.4.7"
+        },
+        {
+          "titulo": "DOMPurify: `IN_PLACE` mode trusts attacker-controlled `nodeName` on live non-form nodes, allowing script retention and XSS via attacker-supplied DOM objects",
+          "url": "https://github.com/advisories/GHSA-x4vx-rjvf-j5p4",
+          "gravidade": "low",
+          "intervalo": "<=3.4.6"
+        },
+        {
+          "titulo": "DOMPurify: Hook mutation of `data.allowedTags` / `data.allowedAttributes` permanently pollutes `DEFAULT_ALLOWED_TAGS` / `DEFAULT_ALLOWED_ATTR`",
+          "url": "https://github.com/advisories/GHSA-76mc-f452-cxcm",
+          "gravidade": "moderate",
+          "intervalo": "<3.4.7"
+        },
+        {
+          "titulo": "DOMPurify's ADD_TAGS function form bypasses FORBID_TAGS due to short-circuit evaluation",
+          "url": "https://github.com/advisories/GHSA-39q2-94rc-95cp",
+          "gravidade": "moderate",
+          "intervalo": "<=3.3.3"
+        },
+        {
+          "titulo": "DOMPurify ADD_ATTR predicate skips URI validation",
+          "url": "https://github.com/advisories/GHSA-cjmm-f4jc-qw8r",
+          "gravidade": "moderate",
+          "intervalo": "<=3.3.1"
+        },
+        {
+          "titulo": "DOMPurify USE_PROFILES prototype pollution allows event handlers",
+          "url": "https://github.com/advisories/GHSA-cj63-jhhr-wcxv",
+          "gravidade": "moderate",
+          "intervalo": "<=3.3.1"
+        },
+        {
+          "titulo": "DOMPurify is vulnerable to mutation-XSS via Re-Contextualization ",
+          "url": "https://github.com/advisories/GHSA-h8r8-wccr-v5f2",
+          "gravidade": "moderate",
+          "intervalo": "<3.3.2"
+        },
+        {
+          "titulo": "DOMPurify: IN_PLACE hook removal leaves a detached subtree executable, causing XSS",
+          "url": "https://github.com/advisories/GHSA-55q2-fjhq-7xh7",
+          "gravidade": "moderate",
+          "intervalo": "<=3.4.12"
+        },
+        {
+          "titulo": "DOMPurify: `CUSTOM_ELEMENT_HANDLING` bypasses `afterSanitizeElements` for allowed custom elements.",
+          "url": "https://github.com/advisories/GHSA-c2j3-45gr-mqc4",
+          "gravidade": "low",
+          "intervalo": "<=3.4.11"
+        },
+        {
+          "titulo": "DOMPurify: IN_PLACE returns a force-removed rawtext root whose text carries attacker markup — pure HTML reparse executes",
+          "url": "https://github.com/advisories/GHSA-6688-9rhm-gjv2",
+          "gravidade": "low",
+          "intervalo": "<=3.4.15"
+        }
+      ]
+    },
+    {
+      "pacote": "fflate",
+      "direta": false,
+      "gravidade": "moderate",
+      "versao_instalada": "0.8.2",
+      "correcao_sugerida": true,
+      "avisos": [
+        {
+          "titulo": "fflate unzipSync can enter an infinite loop when parsing malformed ZIP64 archives",
+          "url": "https://github.com/advisories/GHSA-px8p-9vwx-vf98",
+          "gravidade": "moderate",
+          "intervalo": ">=0.8.0 <0.8.3"
+        }
+      ]
+    },
+    {
+      "pacote": "firebase",
+      "direta": true,
+      "gravidade": "moderate",
+      "versao_instalada": "10.14.1",
+      "correcao_sugerida": {
+        "name": "firebase",
+        "version": "13.0.0",
+        "isSemVerMajor": true
+      },
+      "avisos": []
+    },
+    {
+      "pacote": "jspdf",
+      "direta": true,
+      "gravidade": "critical",
+      "versao_instalada": "3.0.4",
+      "correcao_sugerida": {
+        "name": "jspdf",
+        "version": "4.2.1",
+        "isSemVerMajor": true
+      },
+      "avisos": [
+        {
+          "titulo": "jsPDF has Local File Inclusion/Path Traversal vulnerability",
+          "url": "https://github.com/advisories/GHSA-f8cm-6447-x5h2",
+          "gravidade": "critical",
+          "intervalo": "<=3.0.4"
+        },
+        {
+          "titulo": "jsPDF has PDF Injection in AcroFormChoiceField that allows Arbitrary JavaScript Execution",
+          "url": "https://github.com/advisories/GHSA-pqxr-3g65-p328",
+          "gravidade": "high",
+          "intervalo": "<=4.0.0"
+        },
+        {
+          "titulo": "jsPDF Vulnerable to Denial of Service (DoS) via Unvalidated BMP Dimensions in BMPDecoder",
+          "url": "https://github.com/advisories/GHSA-95fx-jjr5-f39c",
+          "gravidade": "high",
+          "intervalo": "<=4.0.0"
+        },
+        {
+          "titulo": "jsPDF Vulnerable to Stored XMP Metadata Injection (Spoofing & Integrity Violation)",
+          "url": "https://github.com/advisories/GHSA-vm32-vv63-w422",
+          "gravidade": "moderate",
+          "intervalo": "<=4.0.0"
+        },
+        {
+          "titulo": "jsPDF has Shared State Race Condition in addJS Plugin",
+          "url": "https://github.com/advisories/GHSA-cjw8-79x6-5cj4",
+          "gravidade": "moderate",
+          "intervalo": "<=4.0.0"
+        },
+        {
+          "titulo": "jsPDF has a PDF Object Injection via Unsanitized Input in addJS Method",
+          "url": "https://github.com/advisories/GHSA-9vjf-qc39-jprp",
+          "gravidade": "high",
+          "intervalo": "<4.2.0"
+        },
+        {
+          "titulo": "jsPDF Affected by Client-Side/Server-Side Denial of Service via Malicious GIF Dimensions",
+          "url": "https://github.com/advisories/GHSA-67pg-wm7f-q7fj",
+          "gravidade": "high",
+          "intervalo": "<4.2.0"
+        },
+        {
+          "titulo": "jsPDF has a PDF Injection in AcroForm module allows Arbitrary JavaScript Execution (RadioButton.createOption and \"AS\" property)",
+          "url": "https://github.com/advisories/GHSA-p5xg-68wr-hm3m",
+          "gravidade": "high",
+          "intervalo": "<4.2.0"
+        },
+        {
+          "titulo": "jsPDF has a PDF Object Injection via FreeText color",
+          "url": "https://github.com/advisories/GHSA-7x6v-j9x4-qf24",
+          "gravidade": "high",
+          "intervalo": "<=4.2.0"
+        },
+        {
+          "titulo": "jsPDF has HTML Injection in New Window paths",
+          "url": "https://github.com/advisories/GHSA-wfv2-pwc8-crg5",
+          "gravidade": "critical",
+          "intervalo": "<=4.2.0"
+        }
+      ]
+    },
+    {
+      "pacote": "lodash",
+      "direta": false,
+      "gravidade": "high",
+      "versao_instalada": "4.17.21",
+      "correcao_sugerida": true,
+      "avisos": [
+        {
+          "titulo": "lodash vulnerable to Code Injection via `_.template` imports key names",
+          "url": "https://github.com/advisories/GHSA-r5fr-rjxr-66jc",
+          "gravidade": "high",
+          "intervalo": ">=4.0.0 <=4.17.23"
+        },
+        {
+          "titulo": "lodash vulnerable to Prototype Pollution via array path bypass in `_.unset` and `_.omit`",
+          "url": "https://github.com/advisories/GHSA-f23m-r3pf-42rh",
+          "gravidade": "moderate",
+          "intervalo": "<=4.17.23"
+        },
+        {
+          "titulo": "Lodash has Prototype Pollution Vulnerability in `_.unset` and `_.omit` functions",
+          "url": "https://github.com/advisories/GHSA-xxjr-mmjv-4gpg",
+          "gravidade": "moderate",
+          "intervalo": ">=4.0.0 <=4.17.22"
+        }
+      ]
+    },
+    {
+      "pacote": "protobufjs",
+      "direta": false,
+      "gravidade": "critical",
+      "versao_instalada": "7.5.4",
+      "correcao_sugerida": true,
+      "avisos": [
+        {
+          "titulo": "Arbitrary code execution in protobufjs",
+          "url": "https://github.com/advisories/GHSA-xq3m-2v4x-88gg",
+          "gravidade": "critical",
+          "intervalo": "<7.5.5"
+        },
+        {
+          "titulo": "protobuf.js: Code injection through bytes field defaults in generated toObject code",
+          "url": "https://github.com/advisories/GHSA-66ff-xgx4-vchm",
+          "gravidade": "high",
+          "intervalo": "<=7.5.5"
+        },
+        {
+          "titulo": "protobuf.js: Denial of service from crafted field names in generated code",
+          "url": "https://github.com/advisories/GHSA-2pr8-phx7-x9h3",
+          "gravidade": "moderate",
+          "intervalo": "<=7.5.5"
+        },
+        {
+          "titulo": "protobuf.js: Prototype injection in generated message constructors",
+          "url": "https://github.com/advisories/GHSA-fx83-v9x8-x52w",
+          "gravidade": "moderate",
+          "intervalo": "<=7.5.5"
+        },
+        {
+          "titulo": "protobuf.js: Code generation gadget after prototype pollution",
+          "url": "https://github.com/advisories/GHSA-75px-5xx7-5xc7",
+          "gravidade": "high",
+          "intervalo": "<=7.5.5"
+        },
+        {
+          "titulo": "protobuf.js: Process-wide denial of service through unsafe option paths",
+          "url": "https://github.com/advisories/GHSA-jvwf-75h9-cwgg",
+          "gravidade": "high",
+          "intervalo": "<=7.5.5"
+        },
+        {
+          "titulo": "protobuf.js: Denial of service through unbounded protobuf recursion",
+          "url": "https://github.com/advisories/GHSA-685m-2w69-288q",
+          "gravidade": "high",
+          "intervalo": "<=7.5.5"
+        },
+        {
+          "titulo": "protobufjs has overlong UTF-8 decoding",
+          "url": "https://github.com/advisories/GHSA-q6x5-8v7m-xcrf",
+          "gravidade": "moderate",
+          "intervalo": "<=7.5.5"
+        },
+        {
+          "titulo": "protobufjs: Denial of Service via unbounded recursive JSON descriptor expansion",
+          "url": "https://github.com/advisories/GHSA-jggg-4jg4-v7c6",
+          "gravidade": "moderate",
+          "intervalo": "<=7.5.7"
+        },
+        {
+          "titulo": "protobufjs: Denial of service through unbounded Any expansion during JSON conversion",
+          "url": "https://github.com/advisories/GHSA-wcpc-wj8m-hjx6",
+          "gravidade": "high",
+          "intervalo": "<=7.6.0"
+        },
+        {
+          "titulo": "protobufjs : Schema-derived names can shadow runtime-significant properties",
+          "url": "https://github.com/advisories/GHSA-f38q-mgvj-vph7",
+          "gravidade": "moderate",
+          "intervalo": "<=7.6.2"
+        },
+        {
+          "titulo": "protobufjs: Denial of Service via infinite loop in .proto option parsing",
+          "url": "https://github.com/advisories/GHSA-j3f2-48v5-ccww",
+          "gravidade": "moderate",
+          "intervalo": ">=7.5.0 <=7.6.4"
+        }
+      ]
+    },
+    {
+      "pacote": "react-router",
+      "direta": false,
+      "gravidade": "moderate",
+      "versao_instalada": "6.30.3",
+      "correcao_sugerida": true,
+      "avisos": [
+        {
+          "titulo": "React Router: Open redirect via backslash in <Link> and useNavigate (CVE-2025-68470 bypass)",
+          "url": "https://github.com/advisories/GHSA-wrjc-x8rr-h8h6",
+          "gravidade": "moderate",
+          "intervalo": ">=6.0.0 <7.18.0"
+        },
+        {
+          "titulo": "React Router: Arbitrary Constructor Injection via deserializeErrors() in React Router SSR Hydration",
+          "url": "https://github.com/advisories/GHSA-337j-9hxr-rhxg",
+          "gravidade": "moderate",
+          "intervalo": ">=6.4.0 <7.18.0"
+        },
+        {
+          "titulo": "React Router's same-origin redirect with path starting // causes open redirect via protocol-relative URL reinterpretation",
+          "url": "https://github.com/advisories/GHSA-2j2x-hqr9-3h42",
+          "gravidade": "moderate",
+          "intervalo": ">=6.7.0 <6.30.4"
+        }
+      ]
+    },
+    {
+      "pacote": "react-router-dom",
+      "direta": true,
+      "gravidade": "moderate",
+      "versao_instalada": "6.30.3",
+      "correcao_sugerida": true,
+      "avisos": [
+        {
+          "titulo": "React Router: Open redirect leading to XSS",
+          "url": "https://github.com/advisories/GHSA-jjmj-jmhj-qwj2",
+          "gravidade": "moderate",
+          "intervalo": ">=6.30.2 <=6.30.5"
+        }
+      ]
+    },
+    {
+      "pacote": "undici",
+      "direta": false,
+      "gravidade": "high",
+      "versao_instalada": "6.19.7",
+      "correcao_sugerida": {
+        "name": "firebase",
+        "version": "13.0.0",
+        "isSemVerMajor": true
+      },
+      "avisos": [
+        {
+          "titulo": "Use of Insufficiently Random Values in undici",
+          "url": "https://github.com/advisories/GHSA-c76h-2ccp-4975",
+          "gravidade": "moderate",
+          "intervalo": ">=6.0.0 <6.21.1"
+        },
+        {
+          "titulo": "Undici has an unbounded decompression chain in HTTP responses on Node.js Fetch API via Content-Encoding leads to resource exhaustion",
+          "url": "https://github.com/advisories/GHSA-g9mf-h72j-4rw9",
+          "gravidade": "moderate",
+          "intervalo": "<6.23.0"
+        },
+        {
+          "titulo": "undici Denial of Service attack via bad certificate data",
+          "url": "https://github.com/advisories/GHSA-cxrh-j4jr-qwg3",
+          "gravidade": "low",
+          "intervalo": ">=6.0.0 <6.21.2"
+        },
+        {
+          "titulo": "Undici: Malicious WebSocket 64-bit length overflows parser and crashes the client",
+          "url": "https://github.com/advisories/GHSA-f269-vfmq-vjvj",
+          "gravidade": "high",
+          "intervalo": ">=6.0.0 <6.24.0"
+        },
+        {
+          "titulo": "Undici has an HTTP Request/Response Smuggling issue",
+          "url": "https://github.com/advisories/GHSA-2mjp-6q6p-2qxm",
+          "gravidade": "moderate",
+          "intervalo": "<6.24.0"
+        },
+        {
+          "titulo": "Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression",
+          "url": "https://github.com/advisories/GHSA-vrm6-8vpv-qv8q",
+          "gravidade": "high",
+          "intervalo": "<6.24.0"
+        },
+        {
+          "titulo": "Undici has Unhandled Exception in WebSocket Client Due to Invalid server_max_window_bits Validation",
+          "url": "https://github.com/advisories/GHSA-v9p9-hfj2-hcw8",
+          "gravidade": "high",
+          "intervalo": "<6.24.0"
+        },
+        {
+          "titulo": "Undici has CRLF Injection in undici via `upgrade` option",
+          "url": "https://github.com/advisories/GHSA-4992-7rv2-5pvq",
+          "gravidade": "moderate",
+          "intervalo": "<6.24.0"
+        },
+        {
+          "titulo": "undici vulnerable to HTTP header injection via Set-Cookie percent-decoding",
+          "url": "https://github.com/advisories/GHSA-p88m-4jfj-68fv",
+          "gravidade": "moderate",
+          "intervalo": "<6.27.0"
+        },
+        {
+          "titulo": "undici WebSocket client vulnerable to denial of service via fragment count bypass",
+          "url": "https://github.com/advisories/GHSA-vxpw-j846-p89q",
+          "gravidade": "high",
+          "intervalo": "<6.27.0"
+        },
+        {
+          "titulo": "undici vulnerable to Set-Cookie SameSite attribute downgrade via permissive substring matching",
+          "url": "https://github.com/advisories/GHSA-g8m3-5g58-fq7m",
+          "gravidade": "low",
+          "intervalo": "<6.27.0"
+        },
+        {
+          "titulo": "undici vulnerable to downstream response desynchronization via retry interceptor",
+          "url": "https://github.com/advisories/GHSA-8xcm-r25x-g524",
+          "gravidade": "moderate",
+          "intervalo": "<6.28.0"
+        },
+        {
+          "titulo": "undici vulnerable to CRLF Injection via blob-like body 'type' property",
+          "url": "https://github.com/advisories/GHSA-m8rv-5g2x-5cg5",
+          "gravidade": "moderate",
+          "intervalo": "<6.28.0"
+        },
+        {
+          "titulo": "undici vulnerable to cookie attribute injection via unsanitized domain and unparsed setCookie fields",
+          "url": "https://github.com/advisories/GHSA-v3r7-h72x-cjcm",
+          "gravidade": "moderate",
+          "intervalo": "<6.28.0"
+        },
+        {
+          "titulo": "undici vulnerable to HTTP response queue poisoning via keep-alive socket reuse",
+          "url": "https://github.com/advisories/GHSA-35p6-xmwp-9g52",
+          "gravidade": "low",
+          "intervalo": "<6.27.0"
+        },
+        {
+          "titulo": "undici vulnerable to downstream response splitting via retry interceptor",
+          "url": "https://github.com/advisories/GHSA-r53p-7pc4-xj5r",
+          "gravidade": "low",
+          "intervalo": "<6.28.1"
+        },
+        {
+          "titulo": "undici vulnerable to Denial of Service via unrequested WebSocket subprotocol",
+          "url": "https://github.com/advisories/GHSA-rfgv-xxqx-mfg5",
+          "gravidade": "high",
+          "intervalo": ">=6.7.0 <6.28.1"
+        }
+      ]
+    },
+    {
+      "pacote": "websocket-driver",
+      "direta": false,
+      "gravidade": "critical",
+      "versao_instalada": "0.7.4",
+      "correcao_sugerida": true,
+      "avisos": [
+        {
+          "titulo": "websocket-driver: Resource limit bypass via message compression",
+          "url": "https://github.com/advisories/GHSA-mp7j-qc5w-4988",
+          "gravidade": "moderate",
+          "intervalo": "<0.7.5"
+        },
+        {
+          "titulo": "websocket-driver: Message corruption via abuse of protocol length headers",
+          "url": "https://github.com/advisories/GHSA-xv26-6w52-cph6",
+          "gravidade": "critical",
+          "intervalo": "<0.7.5"
+        }
+      ]
+    },
+    {
+      "pacote": "xlsx",
+      "direta": true,
+      "gravidade": "high",
+      "versao_instalada": "0.18.5",
+      "correcao_sugerida": false,
+      "avisos": [
+        {
+          "titulo": "Prototype Pollution in sheetJS",
+          "url": "https://github.com/advisories/GHSA-4r6h-8v6p-xvw6",
+          "gravidade": "high",
+          "intervalo": "<0.19.3"
+        },
+        {
+          "titulo": "SheetJS Regular Expression Denial of Service (ReDoS)",
+          "url": "https://github.com/advisories/GHSA-5pgg-2g8v-p4x9",
+          "gravidade": "high",
+          "intervalo": "<0.20.2"
+        }
+      ]
+    }
+  ]
+}
